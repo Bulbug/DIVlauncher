@@ -509,15 +509,16 @@ public class LauncherActivity extends BaseActivity {
 
         mNavHome.setOnClickListener(v -> Tools.backToMainMenu(this));
         mNavProfiles.setOnClickListener(v -> navigateTo(ProfilesFragment.class, ProfilesFragment.TAG));
-        mNavMods.setOnClickListener(v -> {
-            if(Tools.isLocalProfile(this) || Tools.isDemoProfile(this)) {
-                Toast.makeText(this, R.string.toast_not_available_demo, Toast.LENGTH_LONG).show();
-                return;
-            }
-            navigateTo(SearchModFragment.class, SearchModFragment.TAG);
-        });
+        mNavMods.setOnClickListener(v -> navigateTo(SearchModFragment.class, SearchModFragment.TAG));
         mNavControls.setOnClickListener(v -> startActivity(new Intent(this, CustomControlsActivity.class)));
         mNavSettings.setOnClickListener(v -> navigateTo(SettingsFragment.class, SETTING_FRAGMENT_TAG));
+    }
+
+    /** Open account authentication directly; do not rely on a Spinner selection changing. */
+    private void openAccountAuthentication() {
+        Fragment current = getSupportFragmentManager().findFragmentById(mFragmentView.getId());
+        if (current instanceof SelectAuthFragment) return;
+        Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
     }
 
     /** Stuff all the view boilerplate here */
@@ -526,6 +527,7 @@ public class LauncherActivity extends BaseActivity {
         mSettingsButton = findViewById(R.id.setting_button);
         mAccountSpinner = findViewById(R.id.account_spinner);
         mProgressLayout = findViewById(R.id.progress_layout);
+        findViewById(R.id.add_account_button).setOnClickListener(v -> openAccountAuthentication());
         bindNavigation();
     }
 }

@@ -519,7 +519,12 @@ public final class Tools {
     }
 
     public static String[] getMinecraftClientArgs(MinecraftAccount profile, JMinecraftVersionList.Version versionInfo, File gameDir) {
-        String username = profile.username.replace("Demo.", "");
+        // Strip the legacy prefix only for an actual demo identity. Offline usernames
+        // are user-chosen and must be passed to Minecraft unchanged.
+        String username = profile.username;
+        if (profile.isDemo() && username.startsWith("Demo.")) {
+            username = username.substring("Demo.".length());
+        }
         String versionName = versionInfo.id;
         if (versionInfo.inheritsFrom != null) {
             versionName = versionInfo.inheritsFrom;
@@ -1488,7 +1493,10 @@ public final class Tools {
 
     public static boolean isDemoProfile(Context ctx){
         MinecraftAccount currentProfile = PojavProfile.getCurrentProfileContent(ctx, null);
-        return currentProfile != null && currentProfile.isDemo();
+        // Explicit offline accounts are never subject to demo-only launcher restrictions,
+        // even if an older account file has stale fields from a previous account type.
+        if (currentProfile == null || currentProfile.isOffline()) return false;
+        return currentProfile.isDemo();
     }
 
     public static boolean isLocalProfile(Context ctx){

@@ -180,8 +180,15 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
     @Override
     public final void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        if(position == 0){  // Add account button
+        if(position == 0){  // Add account entry in the dropdown
             if(mAccountList.size() > 1){
+                // Restore the actual active account rather than leaving the Spinner visually
+                // stuck on the action row. If position 0 was already selected Android may not
+                // dispatch this callback at all, which is why LauncherActivity also exposes a
+                // dedicated Add Account button in the header.
+                String activeName = PojavProfile.getCurrentProfileName(getContext());
+                int activePosition = activeName == null ? -1 : mAccountList.indexOf(activeName);
+                if (activePosition > 0) setSelection(activePosition, false);
                 ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
             }
             return;

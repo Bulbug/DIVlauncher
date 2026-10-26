@@ -18,7 +18,7 @@ This project keeps the existing PojavLauncher-based Java/Gradle architecture and
 3. For Ely.by 2FA, enter the current verification code when prompted. The session is saved only after both authentication and the injector integrity check succeed.
 4. The launcher automatically activates the account that just completed login. Select a different saved account in the account picker to switch accounts. The check mark identifies the active entry. Long-press an offline account in the dropdown to rename it; removal requires confirmation.
 
-The Add Account menu opens from the shared account picker even if another launcher screen is currently visible. Explicit `offline` accounts are not treated as legacy `Demo.*` profiles and do not receive the Minecraft `--demo` launch argument. This does not unlock licensed features on a genuine demo-only Minecraft installation; offline identities are unverified.
+The Add Account menu opens from the shared account picker even if another launcher screen is currently visible. Explicit `offline` accounts are treated as local identities even if stale token fields are present, are not treated as legacy `Demo.*` profiles, and do not receive the Minecraft `--demo` launch argument. Offline accounts can use the launcher's profile, mod, installer, and game-directory tools. Public client files can be downloaded without a signed-in account. Offline identities remain unverified and cannot authenticate with online-mode servers or grant a Minecraft license.
 
 ## Build
 

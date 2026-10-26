@@ -92,6 +92,20 @@
         android:dropDownVerticalOffset="@dimen/_42sdp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toEndOf="@id/nav_rail"
+        app:layout_constraintEnd_toStartOf="@id/add_account_button" />
+
+    <!-- Dedicated Add Account control: tapping the currently selected Spinner row does not
+         reliably fire onItemSelected on every Android version, so account creation has its own target. -->
+    <ImageButton
+        android:id="@+id/add_account_button"
+        android:layout_width="@dimen/_42sdp"
+        android:layout_height="@dimen/_42sdp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/auth_add_account"
+        android:padding="@dimen/padding_moderate"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_add"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Kept for LauncherActivity; navigation now lives in the rail -->

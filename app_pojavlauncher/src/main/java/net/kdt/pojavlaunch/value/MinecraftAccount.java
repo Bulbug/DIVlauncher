@@ -58,9 +58,13 @@ public class MinecraftAccount {
     }
 
     public boolean isLocal(){
+        // Explicit offline identity is authoritative. Its accessToken is a local sentinel,
+        // not a credential, and stale token data must not turn it into a premium account.
+        if (TYPE_OFFLINE.equals(authType)) return true;
         // Provider identity is authoritative. A damaged/missing Ely.by token must never
         // silently turn a premium account into an offline account.
-        if (TYPE_ELYBY.equals(authType) || TYPE_MICROSOFT.equals(authType) || isMicrosoft) return false;
+        if (TYPE_ELYBY.equals(authType) || TYPE_MICROSOFT.equals(authType)
+                || TYPE_DEMO.equals(authType) || isMicrosoft) return false;
         return (accessToken == null || accessToken.equals("0")) && !isDemo();
     }
 

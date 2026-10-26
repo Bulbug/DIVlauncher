@@ -65,12 +65,7 @@ public class MainMenuFragment extends Fragment {
         mShareLogsButton.setOnClickListener((v) -> shareLog(requireContext()));
 
         mOpenDirectoryButton.setOnClickListener((v)-> {
-            Tools.switchDemo(Tools.isDemoProfile(v.getContext())); // avoid switching accounts being able to access
-            if(Tools.isDemoProfile(v.getContext())){
-                Toast.makeText(v.getContext(), R.string.toast_not_available_demo, Toast.LENGTH_LONG).show();
-                return;
-            }
-
+            Tools.switchDemo(Tools.isDemoProfile(v.getContext()));
             openPath(v.getContext(), getCurrentProfileDirectory(), false);
         });
 
@@ -97,12 +92,6 @@ public class MainMenuFragment extends Fragment {
     }
 
     private void runInstallerWithConfirmation(boolean isCustomArgs) {
-        // avoid using custom installers to install a version
-        if(Tools.isLocalProfile(requireContext()) || Tools.isDemoProfile(requireContext())){
-            Toast.makeText(requireContext(), R.string.toast_not_available_demo, Toast.LENGTH_LONG).show();
-            return;
-        }
-
         if (ProgressKeeper.getTaskCount() == 0)
             Tools.installMod(requireActivity(), isCustomArgs);
         else
