@@ -4,7 +4,7 @@ This project keeps the existing PojavLauncher-based Java/Gradle architecture and
 
 ## How it works
 
-- **Offline:** accepts only Java Edition usernames matching `^[A-Za-z0-9_]{3,16}$`. It creates the standard Java offline UUID from `OfflinePlayer:<exact username>`, saves the profile beside existing accounts, and selects it for launching. Offline mode does not verify account ownership and cannot authenticate with online-mode servers.
+- **Offline:** accepts only Java Edition usernames matching `^[A-Za-z0-9_]{3,16}$`. It creates the standard Java offline UUID from `OfflinePlayer:<exact username>`, saves the profile beside existing accounts, and explicitly activates the new profile after login. A saved offline profile can download the public client/assets/libraries needed for local play (an internet connection is still needed for files that are not cached). Offline mode does not verify account ownership and cannot authenticate with online-mode servers.
 - **Ely.by:** uses Ely.by's documented HTTPS Yggdrasil-compatible `/auth/authenticate`, `/auth/validate`, `/auth/refresh`, and `/auth/invalidate` endpoints at `https://authserver.ely.by`. Two-factor authentication follows the documented `password:token` retry. A returned profile UUID/name—not user-entered data—is used for the account.
 - **Storage:** Ely.by access tokens are encrypted with AES-GCM using an Android Keystore key (Android 6.0/API 23+). The account JSON contains a marker, not the token. Passwords and TOTP codes are not saved. On devices without supported secure storage, Ely.by login is refused rather than storing the token in plain text.
 - **Launch:** before Play, Ely.by sessions are validated and refreshed. The active profile's returned UUID, username and access token populate the existing Minecraft launch arguments; `-javaagent:<private-app-path>/authlib-injector-1.2.8.jar=ely.by` is added only for Ely.by accounts. The existing Minecraft JAR is not modified. Offline and Microsoft accounts do not receive the Ely.by agent.
@@ -16,7 +16,9 @@ This project keeps the existing PojavLauncher-based Java/Gradle architecture and
 1. Open the account picker and choose **Add an account**.
 2. Choose **Offline account**, enter a valid 3–16 character username, and confirm the offline-mode warning; or choose **Ely.by account** and sign in at the official Ely.by authentication endpoint.
 3. For Ely.by 2FA, enter the current verification code when prompted. The session is saved only after both authentication and the injector integrity check succeed.
-4. Select a saved account in the account picker to make it active. The check mark identifies the active entry. Long-press an offline account in the dropdown to rename it; removal requires confirmation.
+4. The launcher automatically activates the account that just completed login. Select a different saved account in the account picker to switch accounts. The check mark identifies the active entry. Long-press an offline account in the dropdown to rename it; removal requires confirmation.
+
+The Add Account menu opens from the shared account picker even if another launcher screen is currently visible. Explicit `offline` accounts are not treated as legacy `Demo.*` profiles and do not receive the Minecraft `--demo` launch argument. This does not unlock licensed features on a genuine demo-only Minecraft installation; offline identities are unverified.
 
 ## Build
 

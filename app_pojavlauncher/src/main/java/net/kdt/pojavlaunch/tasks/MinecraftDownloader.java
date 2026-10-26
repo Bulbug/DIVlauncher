@@ -14,6 +14,7 @@ import net.kdt.pojavlaunch.JAssetInfo;
 import net.kdt.pojavlaunch.JAssets;
 import net.kdt.pojavlaunch.JMinecraftVersionList;
 import net.kdt.pojavlaunch.NewJREUtil;
+import net.kdt.pojavlaunch.PojavProfile;
 import net.kdt.pojavlaunch.R;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.mirrors.DownloadMirror;
@@ -23,6 +24,7 @@ import net.kdt.pojavlaunch.utils.DownloadUtils;
 import net.kdt.pojavlaunch.utils.FileUtils;
 import net.kdt.pojavlaunch.value.DependentLibrary;
 import net.kdt.pojavlaunch.value.MinecraftClientInfo;
+import net.kdt.pojavlaunch.value.MinecraftAccount;
 import net.kdt.pojavlaunch.value.MinecraftLibraryArtifact;
 
 import java.io.File;
@@ -55,6 +57,7 @@ public class MinecraftDownloader {
     private static final ThreadLocal<byte[]> sThreadLocalDownloadBuffer = new ThreadLocal<>();
 
     private boolean isLocalProfile = false;
+    private boolean isExplicitOfflineAccount = false;
 
     /**
      * Start the game version download process on the global executor service.
@@ -67,10 +70,13 @@ public class MinecraftDownloader {
                       @NonNull String realVersion, // this was there for a reason
                       @NonNull AsyncMinecraftDownloader.DoneListener listener) {
         if(activity != null){
+            MinecraftAccount selectedAccount = PojavProfile.getCurrentProfileContent(activity, null);
             isLocalProfile = Tools.isLocalProfile(activity);
+            isExplicitOfflineAccount = selectedAccount != null && selectedAccount.isOffline();
             Tools.switchDemo(Tools.isDemoProfile(activity));
         } else {
             isLocalProfile = true;
+            isExplicitOfflineAccount = false;
             Tools.switchDemo(true);
         }
 
@@ -516,8 +522,12 @@ public class MinecraftDownloader {
         }
         
         private void downloadFile() throws Exception {
-            if(isLocalProfile){
-                throw new RuntimeException("Download failed. Please make sure you are logged in with a Microsoft Account.");
+            // A saved offline profile may download the public game files needed for local
+            // single-player. It still has no verified entitlement and cannot authenticate
+            // to online-mode servers. Keep the login requirement when no explicit offline
+            // account is selected (or when the launcher has no account context at all).
+            if(isLocalProfile && !isExplicitOfflineAccount){
+                throw new RuntimeException("Download failed. Please select a saved account before downloading game files.");
             }
 
             try {

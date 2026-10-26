@@ -14,3 +14,12 @@
 - **Device/emulator launch:** not run. The account flows and Java launch arguments were source-checked, not end-to-end validated on Android or against a live Minecraft server.
 
 These results distinguish source/resource checks from a complete Android build or live authentication test. Do not treat the unrun checks as passed.
+
+
+## Follow-up fixes in `DIVlauncher-account-fixes.zip`
+
+- Add Account no longer silently does nothing when the current fragment is not `MainMenuFragment`; it opens the authentication-method selector from the shared account picker.
+- After a login completes, the account picker reloads and activates the matching username rather than assuming the newly created account is the last filename returned by the filesystem.
+- Explicit Offline/Microsoft/Ely.by account types are not inferred to be demo accounts from a stale `Demo.*` username; only explicit demo accounts or legacy untyped `Demo.*` profiles use demo handling.
+- A selected saved offline account may download missing public game files, while an absent account still cannot initiate downloads. This still does not authenticate the offline player to online-mode servers or grant ownership.
+- Follow-up static checks passed for the changed source paths and XML parsing. A full Gradle compile remains unverified because the wrapper must fetch Gradle 8.13 from `services.gradle.org`, which is not resolvable in this environment.

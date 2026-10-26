@@ -158,7 +158,15 @@ public class mcVersionSpinner extends ExtendedTextView {
             }
         });
 
-        mPopupWindow = new PopupWindow(mListView, MATCH_PARENT, getContext().getResources().getDimensionPixelOffset(R.dimen._184sdp));
+        // Size the dropdown to its rows instead of always reserving 184sdp.
+        // This prevents a large empty panel when only one or two profiles exist,
+        // while keeping a bounded, scrollable popup when there are many profiles.
+        int rowHeight = getResources().getDimensionPixelSize(R.dimen._52sdp);
+        int verticalPadding = 2 * getResources().getDimensionPixelSize(R.dimen._14sdp);
+        int maximumHeight = getResources().getDimensionPixelSize(R.dimen._184sdp);
+        int contentHeight = mProfileAdapter.getCount() * rowHeight + verticalPadding;
+        int popupHeight = Math.min(contentHeight, maximumHeight);
+        mPopupWindow = new PopupWindow(mListView, MATCH_PARENT, popupHeight);
         mPopupWindow.setElevation(5);
         mPopupWindow.setClippingEnabled(false);
 

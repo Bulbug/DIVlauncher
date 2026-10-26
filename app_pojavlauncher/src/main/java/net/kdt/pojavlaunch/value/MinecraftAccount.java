@@ -65,7 +65,14 @@ public class MinecraftAccount {
     }
 
     public boolean isDemo(){
-        return username != null && username.startsWith("Demo.");
+        // Explicit authentication type takes precedence over the legacy Demo.* username
+        // convention. An offline profile must never inherit --demo just because of a
+        // stale/legacy display name; a real demo account is still recognized by its type
+        // or by its old untyped Demo.* username.
+        if (TYPE_OFFLINE.equals(authType) || TYPE_MICROSOFT.equals(authType) || TYPE_ELYBY.equals(authType)) {
+            return false;
+        }
+        return TYPE_DEMO.equals(authType) || (username != null && username.startsWith("Demo."));
     }
 
     public String getAuthType(){

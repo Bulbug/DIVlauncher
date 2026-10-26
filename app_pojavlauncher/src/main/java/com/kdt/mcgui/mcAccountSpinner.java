@@ -100,20 +100,10 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
     private final DoneListener mDoneListener = account -> {
         Toast.makeText(getContext(), R.string.main_login_done, Toast.LENGTH_SHORT).show();
-
-        // Reauthentication can return an account that is already saved. Select/update it
-        // instead of silently discarding the newly authenticated session.
-        for (int i = 1; i < mAccountList.size(); i++) {
-            if (mAccountList.get(i).equals(account.username)) {
-                mSelectecAccount = account;
-                reloadAccounts(true, i);
-                invalidate();
-                return;
-            }
-        }
-
-        mAccountList.add(account.username);
-        reloadAccounts(true, mAccountList.size() - 1);
+        // Always select the account that just completed login. File.list() order is not
+        // guaranteed, so deriving the selected position from list size can leave an old
+        // Demo account active even after an offline account was created successfully.
+        reloadAccounts(true, 0, account.username);
         invalidate();
     };
 
@@ -290,6 +280,10 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
      * @param overridePosition Force the spinner to be at this position, if not 0
      */
     private void reloadAccounts(boolean fromFiles, int overridePosition){
+        reloadAccounts(fromFiles, overridePosition, null);
+    }
+
+    private void reloadAccounts(boolean fromFiles, int overridePosition, @Nullable String preferredUsername){
         if(fromFiles){
             mAccountList.clear();
 
@@ -307,6 +301,11 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
             }
         }
 
+        if (preferredUsername != null) {
+            int preferredPosition = mAccountList.indexOf(preferredUsername);
+            if (preferredPosition > 0) overridePosition = preferredPosition;
+        }
+
         String[] accountArray = mAccountList.toArray(new String[0]);
         AccountAdapter accountAdapter = new AccountAdapter(getContext(), R.layout.item_minecraft_account, accountArray);
         accountAdapter.setDropDownViewResource(R.layout.item_minecraft_account);
@@ -319,7 +318,6 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
         // Remove or add the behavior if needed
         setNoAccountBehavior();
-
     }
 
     private void performLogin(MinecraftAccount minecraftAccount){

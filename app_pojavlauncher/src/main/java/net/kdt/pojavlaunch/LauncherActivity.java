@@ -100,8 +100,9 @@ public class LauncherActivity extends BaseActivity {
     /* Listener for the auth method selection screen */
     private final ExtraListener<Boolean> mSelectAuthMethod = (key, value) -> {
         Fragment fragment = getSupportFragmentManager().findFragmentById(mFragmentView.getId());
-        // Allow starting the add account only from the main menu, should it be moved to fragment itself ?
-        if(!(fragment instanceof MainMenuFragment)) return false;
+        // The account spinner is shared by the launcher screens, so Add Account must work
+        // even when the user is currently viewing Profiles, Settings, or another screen.
+        if (fragment instanceof SelectAuthFragment) return false;
 
         Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
         return false;
