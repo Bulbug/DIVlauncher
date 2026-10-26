@@ -4,16 +4,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/padding_moderate"
+    android:layout_margin="4dp"
     android:background="@drawable/profile_card_background"
     android:clickable="true"
     android:focusable="true"
-    android:padding="@dimen/_10sdp">
+    android:padding="10dp">
 
     <ImageView
         android:id="@+id/profile_icon"
-        android:layout_width="@dimen/_36sdp"
-        android:layout_height="@dimen/_36sdp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,8 +21,8 @@
 
     <ImageButton
         android:id="@+id/profile_edit"
-        android:layout_width="@dimen/_36sdp"
-        android:layout_height="@dimen/_36sdp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/profile_edit"
         android:src="@drawable/ic_edit_profile"
@@ -31,8 +31,8 @@
 
     <ImageButton
         android:id="@+id/profile_download"
-        android:layout_width="@dimen/_36sdp"
-        android:layout_height="@dimen/_36sdp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/profile_download"
         android:src="@drawable/ic_download"
@@ -44,11 +44,11 @@
         android:id="@+id/profile_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginTop="8dp"
         android:ellipsize="end"
         android:singleLine="true"
         android:textColor="@color/primary_text"
-        android:textSize="15sp"
+        android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/profile_icon"
         app:layout_constraintStart_toStartOf="parent"
@@ -75,7 +75,7 @@
         android:paddingHorizontal="8dp"
         android:paddingVertical="2dp"
         android:textColor="@color/secondary_text"
-        android:textSize="11sp"
+        android:textSize="10sp"
         app:layout_constraintTop_toBottomOf="@id/profile_version"
         app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

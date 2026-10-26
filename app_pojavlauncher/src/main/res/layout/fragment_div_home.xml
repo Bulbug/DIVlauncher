@@ -14,7 +14,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="@dimen/_10sdp">
+            android:padding="12dp">
 
             <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guide_1"
@@ -36,15 +36,15 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/hero_background"
-                android:padding="@dimen/_10sdp"
+                android:padding="12dp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
                 <ImageView
                     android:id="@+id/hero_art"
-                    android:layout_width="@dimen/_48sdp"
-                    android:layout_height="@dimen/_48sdp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:src="@drawable/ic_hero_art"
                     android:importantForAccessibility="no"
                     app:layout_constraintTop_toTopOf="parent"
@@ -54,7 +54,7 @@
                     android:id="@+id/hero_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/_10sdp"
+                    android:layout_marginStart="10dp"
                     android:text="@string/home_ready"
                     android:textColor="@color/secondary_text"
                     android:textSize="12sp"
@@ -64,24 +64,24 @@
                 <com.kdt.mcgui.mcVersionSpinner
                     android:id="@+id/mc_version_spinner"
                     android:layout_width="0dp"
-                    android:layout_height="@dimen/_36sdp"
-                    android:layout_marginStart="@dimen/_10sdp"
-                    android:layout_marginTop="@dimen/padding_medium"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginTop="6dp"
                     android:background="@drawable/field_background"
                     android:drawableEnd="@drawable/spinner_arrow"
                     app:drawableEndPadding="@dimen/_1sdp"
-                    app:drawableEndSize="@dimen/_12sdp"
+                    app:drawableEndSize="12dp"
                     app:drawableStartIntegerScaling="true"
-                    app:drawableStartSize="@dimen/_30sdp"
+                    app:drawableStartSize="28dp"
                     app:layout_constraintTop_toBottomOf="@id/hero_label"
                     app:layout_constraintStart_toEndOf="@id/hero_art"
                     app:layout_constraintEnd_toStartOf="@+id/edit_profile_button" />
 
                 <ImageButton
                     android:id="@+id/edit_profile_button"
-                    android:layout_width="@dimen/_36sdp"
+                    android:layout_width="32dp"
                     android:layout_height="0dp"
-                    android:layout_marginHorizontal="@dimen/padding_medium"
+                    android:layout_marginHorizontal="4dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_edit_profile"
                     app:layout_constraintTop_toTopOf="@id/mc_version_spinner"
@@ -91,9 +91,9 @@
                 <com.kdt.mcgui.MineButton
                     android:id="@+id/play_button"
                     android:layout_width="wrap_content"
-                    android:layout_height="@dimen/_42sdp"
-                    android:minWidth="@dimen/_66sdp"
-                    android:paddingHorizontal="@dimen/_14sdp"
+                    android:layout_height="40dp"
+                    android:minWidth="68dp"
+                    android:paddingHorizontal="12dp"
                     android:text="@string/main_play"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -104,11 +104,12 @@
                 android:id="@+id/quick_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_14sdp"
-                android:layout_marginStart="@dimen/padding_medium"
+                android:layout_marginTop="12dp"
+                android:layout_marginStart="4dp"
                 android:text="@string/home_quick_actions"
                 android:textColor="@color/primary_text"
-                android:textSize="14sp"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
                 app:layout_constraintTop_toBottomOf="@id/hero_card"
                 app:layout_constraintStart_toStartOf="parent" />

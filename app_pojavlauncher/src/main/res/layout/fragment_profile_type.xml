@@ -8,18 +8,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/_10sdp">
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/title_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/padding_medium"
-            android:layout_marginBottom="@dimen/padding_medium"
-            android:layout_marginStart="@dimen/padding_medium"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginStart="4dp"
             android:text="@string/create_profile_vanilla_like_versions"
             android:textColor="@color/primary_text"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -29,16 +29,16 @@
             <com.kdt.mcgui.MineButton
                 android:id="@+id/vanilla_profile"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/create_profile_vanilla" />
             <com.kdt.mcgui.MineButton
                 android:id="@+id/optifine_profile"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/create_profile_optifine" />
         </LinearLayout>
 
@@ -46,12 +46,12 @@
             android:id="@+id/title_modded_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/_14sdp"
-            android:layout_marginBottom="@dimen/padding_medium"
-            android:layout_marginStart="@dimen/padding_medium"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginStart="4dp"
             android:text="@string/create_profile_modded_versions"
             android:textColor="@color/primary_text"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -61,16 +61,16 @@
             <com.kdt.mcgui.MineButton
                 android:id="@+id/modded_profile_fabric"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/modloader_dl_install_fabric" />
             <com.kdt.mcgui.MineButton
                 android:id="@+id/modded_profile_quilt"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/modloader_dl_install_quilt" />
         </LinearLayout>
 
@@ -81,16 +81,16 @@
             <com.kdt.mcgui.MineButton
                 android:id="@+id/modded_profile_forge"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/modloader_dl_install_forge" />
             <com.kdt.mcgui.MineButton
                 android:id="@+id/modded_profile_modpack"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/modpack_install_button" />
         </LinearLayout>
 
@@ -101,9 +101,9 @@
             <com.kdt.mcgui.MineButton
                 android:id="@+id/modded_profile_bta"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_42sdp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_margin="@dimen/padding_medium"
+                android:layout_margin="4dp"
                 android:text="@string/create_bta_profile" />
             <View
                 android:layout_width="0dp"

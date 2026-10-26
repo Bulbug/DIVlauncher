@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/background_app"
     android:orientation="horizontal"
-    android:padding="@dimen/_10sdp">
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -14,11 +14,12 @@
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="@dimen/_36sdp"
+            android:layout_height="32dp"
             android:gravity="center_vertical"
             android:text="@string/nav_settings"
             android:textColor="@color/primary_text"
-            android:textSize="20sp"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"
             android:textStyle="bold" />
 
         <ScrollView
@@ -37,7 +38,7 @@
         android:id="@+id/settings_panel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_marginStart="@dimen/_10sdp"
+        android:layout_marginStart="12dp"
         android:layout_weight="3"
         android:background="@drawable/panel_background"
         android:clipToOutline="true" />

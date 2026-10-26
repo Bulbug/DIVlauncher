@@ -5,16 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_app"
-    android:padding="@dimen/_10sdp">
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/profiles_title"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/_36sdp"
+        android:layout_height="32dp"
         android:gravity="center_vertical"
         android:text="@string/nav_profiles"
         android:textColor="@color/primary_text"
-        android:textSize="20sp"
+        android:textSize="18sp"
+        android:fontFamily="sans-serif-medium"
         android:textStyle="bold"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -22,8 +23,8 @@
     <com.kdt.mcgui.MineButton
         android:id="@+id/profiles_new_button"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/_36sdp"
-        android:paddingHorizontal="@dimen/_14sdp"
+        android:layout_height="40dp"
+        android:paddingHorizontal="12dp"
         android:text="@string/create_profile"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -32,7 +33,7 @@
         android:id="@+id/profiles_list"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginTop="8dp"
         android:clipToPadding="false"
         app:layout_constraintTop_toBottomOf="@id/profiles_title"
         app:layout_constraintBottom_toBottomOf="parent"

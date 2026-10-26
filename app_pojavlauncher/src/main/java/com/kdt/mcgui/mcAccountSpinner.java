@@ -1,7 +1,6 @@
 package com.kdt.mcgui;
 
 import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -13,12 +12,11 @@ import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
 import android.widget.EditText;
-import android.widget.AdapterView;
+import android.widget.ListAdapter;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -28,6 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.AppCompatSpinner;
+import androidx.appcompat.widget.ListPopupWindow;
 import androidx.core.content.res.ResourcesCompat;
 
 
@@ -58,7 +57,7 @@ import java.util.List;
 
 import fr.spse.extended_view.ExtendedTextView;
 
-public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.OnItemSelectedListener {
+public class mcAccountSpinner extends AppCompatSpinner {
     public mcAccountSpinner(@NonNull Context context) {
         this(context, null);
     }
@@ -161,7 +160,6 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
         return false;
     };
 
-    @SuppressLint("ClickableViewAccessibility")
     private void init(){
         // Set visual properties
         setBackgroundColor(getResources().getColor(R.color.background_status_bar));
@@ -170,7 +168,6 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
         // Set behavior
         reloadAccounts(true, 0);
-        setOnItemSelectedListener(this);
 
         ExtraCore.addExtraListener(ExtraConstants.MOJANG_LOGIN_TODO, mMojangLoginListener);
         ExtraCore.addExtraListener(ExtraConstants.MICROSOFT_LOGIN_TODO, mMicrosoftLoginListener);
@@ -178,30 +175,48 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
     }
 
 
+    /**
+     * Use an explicit popup list instead of Spinner's selection callback for the action row.
+     * Android does not dispatch onItemSelected when the user taps the already-selected row;
+     * this is especially visible when no accounts exist and "Add account" is position zero.
+     * A ListPopupWindow reports an item click independently of the current selection.
+     */
     @Override
-    public final void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        if(position == 0){  // Add account entry in the dropdown
-            if(mAccountList.size() > 1){
-                // Restore the actual active account rather than leaving the Spinner visually
-                // stuck on the action row. If position 0 was already selected Android may not
-                // dispatch this callback at all, which is why LauncherActivity also exposes a
-                // dedicated Add Account button in the header.
-                String activeName = PojavProfile.getCurrentProfileName(getContext());
-                int activePosition = activeName == null ? -1 : mAccountList.indexOf(activeName);
-                if (activePosition > 0) setSelection(activePosition, false);
-                ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
-            }
-            return;
-        }
+    public boolean performClick() {
+        if (!(getAdapter() instanceof ListAdapter)) return super.performClick();
 
-        pickAccount(position);
-        if(mSelectecAccount != null)
-            performLogin(mSelectecAccount);
+        final ListPopupWindow popup = new ListPopupWindow(getContext());
+        popup.setAnchorView(this);
+        popup.setAdapter((ListAdapter) getAdapter());
+        popup.setModal(true);
+        float densityScale = getResources().getDisplayMetrics().density;
+        int maxPopupWidth = (int) (380f * densityScale);
+        int minimumPopupWidth = (int) (240f * densityScale);
+        int anchorWidth = Math.max(getWidth(), minimumPopupWidth);
+        popup.setWidth(Math.min(anchorWidth, maxPopupWidth));
+        popup.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+        popup.setOnItemClickListener((parent, rowView, position, id) -> {
+            popup.dismiss();
+            handleAccountRowClick(position);
+        });
+        popup.show();
+        return true;
     }
 
-    @Override
-    public final void onNothingSelected(AdapterView<?> parent) {}
+    private void handleAccountRowClick(int position) {
+        if (position == 0) {
+            // The action row is never allowed to become the active profile.
+            ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+            return;
+        }
+        if (position < 0 || position >= mAccountList.size()) return;
 
+        pickAccount(position);
+        if (mSelectecAccount != null) {
+            performLogin(mSelectecAccount);
+            Toast.makeText(getContext(), "Selected account: " + mSelectecAccount.username, Toast.LENGTH_SHORT).show();
+        }
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -240,6 +255,13 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
         reloadAccounts(true, 0);
     }
 
+    /** Switch to an existing account by its saved username and refresh the displayed account list. */
+    public boolean activateAccount(String username) {
+        if (username == null || username.trim().isEmpty()) return false;
+        reloadAccounts(true, 0, username);
+        return mSelectecAccount != null && username.equals(mSelectecAccount.username);
+    }
+
     @Keep
     public void setLoginBarWidth(float value){
         mLoginBarWidth = value;
@@ -263,24 +285,6 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
         return mLoginStep >= MAX_LOGIN_STEP;
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private void setNoAccountBehavior(){
-        // Set custom behavior when no account are present, to make it act as a button
-        if(mAccountList.size() != 1){
-            // Remove any touch listener
-            setOnTouchListener(null);
-            return;
-        }
-
-        // Make the spinner act like a button, since there is no item to really select
-        setOnTouchListener((v, event) -> {
-            if(event.getAction() != MotionEvent.ACTION_UP) return false;
-            // The activity should intercept this and spawn another fragment
-            ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
-            return true;
-        });
-    }
-
     /**
      * Reload the spinner, from memory or from scratch. A default account can be selected
      * @param fromFiles Whether we use files as the source of truth
@@ -298,13 +302,16 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
             File accountFolder = new File(Tools.DIR_ACCOUNT_NEW);
             if(accountFolder.exists()){
                 String[] fileNames = accountFolder.list();
+                List<String> savedNames = new ArrayList<>();
                 if (fileNames != null) {
                     for (String fileName : fileNames) {
                         if (fileName.endsWith(".json") && fileName.length() > 5) {
-                            mAccountList.add(fileName.substring(0, fileName.length() - 5));
+                            savedNames.add(fileName.substring(0, fileName.length() - 5));
                         }
                     }
                 }
+                savedNames.sort(String.CASE_INSENSITIVE_ORDER);
+                mAccountList.addAll(savedNames);
             }
         }
 
@@ -323,8 +330,6 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
         if(mSelectecAccount != null)
             performLogin(mSelectecAccount);
 
-        // Remove or add the behavior if needed
-        setNoAccountBehavior();
     }
 
     private void performLogin(MinecraftAccount minecraftAccount){

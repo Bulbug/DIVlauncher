@@ -423,6 +423,8 @@
     <string name="discord_invite" translatable="false">https://discord.com/invite/aenk3EUvER</string>
     <string name="local_login_bad_username_title">Unsuitable username</string>
     <string name="local_login_bad_username_text">The username must be between 3–16 characters long, and must only contain latin letters, numbers 0–9 and underscores.</string>
+    <string name="local_login_account_exists_title">Account already exists</string>
+    <string name="local_login_account_exists_text">This username is already saved. Enter a different username to create another offline account, or select the saved account from the account list. Saved accounts are kept separately by username.</string>
     <string name="quick_setting_title">Quick settings</string>
     <string name="create_bta_profile">Create \"Better than Adventure!\" profile</string>
     <string name="select_bta_version">Select \"Better than Adventure!\" version</string>

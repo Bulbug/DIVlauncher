@@ -22,7 +22,7 @@ public class MineButton extends androidx.appcompat.widget.AppCompatButton {
 	public void init() {
 		setTypeface(ResourcesCompat.getFont(getContext(), R.font.noto_sans_bold));
 		setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.mine_button_background, null));
-		setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimensionPixelSize(R.dimen._13ssp));
+		setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
 		setAllCaps(false);
 		setTextColor(ResourcesCompat.getColorStateList(getResources(), R.color.mine_button_text, getContext().getTheme()));
 	}

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/_42sdp"
-    android:layout_marginTop="@dimen/padding_medium"
+    android:layout_height="40dp"
+    android:layout_marginTop="4dp"
     android:background="@drawable/nav_item_background"
     android:clickable="true"
     android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingHorizontal="@dimen/_10sdp">
+    android:paddingHorizontal="10dp">
 
     <ImageView
         android:id="@+id/category_icon"
-        android:layout_width="@dimen/_24sdp"
-        android:layout_height="@dimen/_24sdp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:importantForAccessibility="no"
         android:tint="@color/nav_item_tint" />
 
@@ -21,10 +21,10 @@
         android:id="@+id/category_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/_10sdp"
+        android:layout_marginStart="10dp"
         android:layout_weight="1"
         android:ellipsize="end"
         android:singleLine="true"
         android:textColor="@color/settings_item_text"
-        android:textSize="14sp" />
+        android:textSize="13sp" />
 </LinearLayout>

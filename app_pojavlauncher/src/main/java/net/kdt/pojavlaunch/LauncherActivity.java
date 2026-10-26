@@ -514,11 +514,9 @@ public class LauncherActivity extends BaseActivity {
         mNavSettings.setOnClickListener(v -> navigateTo(SettingsFragment.class, SETTING_FRAGMENT_TAG));
     }
 
-    /** Open account authentication directly; do not rely on a Spinner selection changing. */
-    private void openAccountAuthentication() {
-        Fragment current = getSupportFragmentManager().findFragmentById(mFragmentView.getId());
-        if (current instanceof SelectAuthFragment) return;
-        Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
+    /** Activate a saved account from the account/login screens without creating a duplicate entry. */
+    public boolean activateSavedAccount(String username) {
+        return mAccountSpinner != null && mAccountSpinner.activateAccount(username);
     }
 
     /** Stuff all the view boilerplate here */
@@ -527,7 +525,6 @@ public class LauncherActivity extends BaseActivity {
         mSettingsButton = findViewById(R.id.setting_button);
         mAccountSpinner = findViewById(R.id.account_spinner);
         mProgressLayout = findViewById(R.id.progress_layout);
-        findViewById(R.id.add_account_button).setOnClickListener(v -> openAccountAuthentication());
         bindNavigation();
     }
 }
