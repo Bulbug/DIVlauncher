@@ -50,6 +50,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.kdt.pojavlaunch.lifecycle.ContextExecutor;
+import net.kdt.pojavlaunch.authenticator.elyby.ElyByAuthlibInjector;
 import net.kdt.pojavlaunch.lifecycle.ContextExecutorTask;
 import net.kdt.pojavlaunch.lifecycle.LifecycleAwareAlertDialog;
 import net.kdt.pojavlaunch.memory.MemoryHoleFinder;
@@ -261,6 +262,28 @@ public final class Tools {
 
     public static void launchMinecraft(final AppCompatActivity activity, MinecraftAccount minecraftAccount,
                                        MinecraftProfile minecraftProfile, String versionId, int versionJavaRequirement) throws Throwable {
+        if (minecraftAccount == null) {
+            dialog(activity, activity.getString(R.string.global_error), "Select an account before launching Minecraft.");
+            return;
+        }
+        if (minecraftAccount.isElyBy()) {
+            if (!minecraftAccount.hasElyBySession()) {
+                dialog(activity, activity.getString(R.string.global_error),
+                        activity.getString(R.string.auth_elyby_session_expired));
+                return;
+            }
+            if (!ElyByAuthlibInjector.isValidJar(ElyByAuthlibInjector.getJarFile())) {
+                dialog(activity, activity.getString(R.string.global_error),
+                        "The Ely.by authlib-injector library is missing or corrupted. Connect to the internet and sign in to Ely.by again to repair it.");
+                return;
+            }
+            if (!supportsElyByVersion(versionId, getVersionInfo(versionId))) {
+                dialog(activity, activity.getString(R.string.global_error),
+                        "This Minecraft version could not be confirmed as compatible with Ely.by authentication. Choose Minecraft 1.7.2 or newer.");
+                return;
+            }
+        }
+
         int freeDeviceMemory = getFreeDeviceMemory(activity);
         int localeString;
         int freeAddressSpace = Architecture.is32BitsDevice() ? getMaxContinuousAddressSpaceSize() : -1;
@@ -345,10 +368,42 @@ public final class Tools {
         // ctx.appendlnToLog("full args: "+javaArgList.toString());
         String args = LauncherPreferences.PREF_CUSTOM_JAVA_ARGS;
         if(Tools.isValidString(minecraftProfile.javaArgs)) args = minecraftProfile.javaArgs;
+        if (minecraftAccount.isElyBy()) {
+            String injectorArgument = "-javaagent:" + ElyByAuthlibInjector.getJarFile().getAbsolutePath() + "=ely.by";
+            // authlib-injector can optionally write a local log file; disable that side effect.
+            args = "-Dauthlibinjector.noLogFile " + injectorArgument + (Tools.isValidString(args) ? " " + args : "");
+        }
         FFmpegPlugin.discover(activity);
         JREUtils.launchJavaVM(activity, runtime, gamedir, javaArgList, args);
         // If we returned, this means that the JVM exit dialog has been shown and we don't need to be active anymore.
         // We never return otherwise. The process will be killed anyway, and thus we will become inactive
+    }
+
+    private static boolean supportsElyByVersion(String versionId, JMinecraftVersionList.Version versionInfo) {
+        String candidate = versionInfo != null && isValidString(versionInfo.inheritsFrom)
+                ? versionInfo.inheritsFrom : versionId;
+        if (candidate != null) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("^(\\d+)\\.(\\d+)(?:\\.(\\d+))?.*$")
+                    .matcher(candidate);
+            if (matcher.matches()) {
+                try {
+                    int major = Integer.parseInt(matcher.group(1));
+                    int minor = Integer.parseInt(matcher.group(2));
+                    int patch = matcher.group(3) == null ? 0 : Integer.parseInt(matcher.group(3));
+                    return major > 1 || (major == 1 && (minor > 7 || (minor == 7 && patch >= 2)));
+                } catch (NumberFormatException ignored) { return false; }
+            }
+        }
+        // Snapshot IDs do not contain a dotted version. Their official release timestamp
+        // is sufficient to reject pre-1.7.2 snapshots without excluding modern snapshots.
+        if (versionInfo != null && isValidString(versionInfo.releaseTime)) {
+            try {
+                Date releaseDate = DateUtils.parseReleaseDate(versionInfo.releaseTime);
+                return releaseDate != null && !DateUtils.dateBefore(releaseDate, 2013, 9, 25);
+            } catch (ParseException ignored) { }
+        }
+        return false;
     }
 
     public static File getGameDirPath(@NonNull MinecraftProfile minecraftProfile){
@@ -470,17 +525,19 @@ public final class Tools {
             versionName = versionInfo.inheritsFrom;
         }
 
+        // Microsoft/Mojang's MSA user type is not valid for offline or Ely.by identities.
         String userType = "mojang";
-        try {
-            Date creationDate = DateUtils.getOriginalReleaseDate(versionInfo);
-            // Minecraft 22w43a which adds chat reporting (and signing) was released on
-            // 26th October 2022. So, if the date is not before that (meaning it is equal or higher)
-            // change the userType to MSA to fix the missing signature
-            if(creationDate != null && !DateUtils.dateBefore(creationDate, 2022, 9, 26)) {
-                userType = "msa";
+        if (profile.isMicrosoft) {
+            try {
+                Date creationDate = DateUtils.getOriginalReleaseDate(versionInfo);
+                // Minecraft 22w43a added chat reporting and signing; current Microsoft sessions
+                // use the MSA user type for those releases and later.
+                if(creationDate != null && !DateUtils.dateBefore(creationDate, 2022, 9, 26)) {
+                    userType = "msa";
+                }
+            }catch (ParseException e) {
+                Log.e("CheckForProfileKey", "Failed to determine profile creation date, using \"mojang\"", e);
             }
-        }catch (ParseException e) {
-            Log.e("CheckForProfileKey", "Failed to determine profile creation date, using \"mojang\"", e);
         }
 
 

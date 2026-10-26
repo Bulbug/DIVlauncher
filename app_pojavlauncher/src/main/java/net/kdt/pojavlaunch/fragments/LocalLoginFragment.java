@@ -26,7 +26,7 @@ public class LocalLoginFragment extends Fragment {
 
     public LocalLoginFragment(){
         super(R.layout.fragment_local_login);
-        mUsernameValidationPattern = Pattern.compile("^[a-zA-Z0-9_]*$");
+        mUsernameValidationPattern = Pattern.compile("^[a-zA-Z0-9_]{3,16}$");
     }
 
     @Override
@@ -40,7 +40,7 @@ public class LocalLoginFragment extends Fragment {
             }
 
             ExtraCore.setValue(ExtraConstants.MOJANG_LOGIN_TODO, new String[]{
-                    mUsernameEditText.getText().toString(), "" });
+                    mUsernameEditText.getText().toString().trim(), "" });
 
             Tools.swapFragment(requireActivity(), MainMenuFragment.class, MainMenuFragment.TAG, null);
         });
@@ -50,14 +50,9 @@ public class LocalLoginFragment extends Fragment {
     /** @return Whether the mail (and password) text are eligible to make an auth request  */
     private boolean checkEditText(){
 
-        String text = mUsernameEditText.getText().toString();
-
+        String text = mUsernameEditText.getText().toString().trim();
         Matcher matcher = mUsernameValidationPattern.matcher(text);
-        return !(text.isEmpty()
-                || text.length() < 3
-                || text.length() > 16
-                || !matcher.find()
-                || new File(Tools.DIR_ACCOUNT_NEW + "/" + text + ".json").exists()
-        );
+        return !text.isEmpty() && matcher.matches()
+                && !new File(Tools.DIR_ACCOUNT_NEW + "/" + text + ".json").exists();
     }
 }

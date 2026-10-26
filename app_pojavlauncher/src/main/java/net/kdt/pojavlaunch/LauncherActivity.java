@@ -25,6 +25,13 @@ import androidx.fragment.app.FragmentManager;
 import com.kdt.mcgui.ProgressLayout;
 import com.kdt.mcgui.mcAccountSpinner;
 
+import net.kdt.pojavlaunch.authenticator.elyby.ElyByAuthClient;
+import net.kdt.pojavlaunch.authenticator.elyby.ElyByTokenStore;
+import net.kdt.pojavlaunch.value.MinecraftAccount;
+
+import java.io.File;
+import java.io.IOException;
+import net.kdt.pojavlaunch.PojavProfile;
 import net.kdt.pojavlaunch.contracts.OpenDocumentWithExtension;
 import net.kdt.pojavlaunch.extra.ExtraConstants;
 import net.kdt.pojavlaunch.extra.ExtraCore;
@@ -111,7 +118,88 @@ public class LauncherActivity extends BaseActivity {
         }
     };
 
+    private boolean mElyByLaunchValidationInProgress = false;
+    private boolean mElyByLaunchValidationPassed = false;
+
     private final ExtraListener<Boolean> mLaunchGameListener = (key, value) -> {
+        MinecraftAccount selectedAccountForLaunch = mAccountSpinner == null ? null : mAccountSpinner.getSelectedAccount();
+        if (selectedAccountForLaunch != null && selectedAccountForLaunch.isElyBy()) {
+            if (mElyByLaunchValidationPassed) {
+                // The re-fired launch event below has completed provider validation.
+                mElyByLaunchValidationPassed = false;
+            } else {
+                if (mElyByLaunchValidationInProgress) {
+                    Toast.makeText(this, "Ely.by session validation is already running.", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+                if (!selectedAccountForLaunch.hasElyBySession()) {
+                    Toast.makeText(this, R.string.auth_elyby_session_expired, Toast.LENGTH_LONG).show();
+                    ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+                    return false;
+                }
+                mElyByLaunchValidationInProgress = true;
+                final String previousAccountName = selectedAccountForLaunch.username;
+                PojavApplication.sExecutorService.execute(() -> {
+                    try {
+                        ElyByAuthClient.validate(selectedAccountForLaunch.accessToken);
+                        ElyByAuthClient.refresh(selectedAccountForLaunch);
+                        if (!previousAccountName.equals(selectedAccountForLaunch.username)) {
+                            File collidingAccount = new File(Tools.DIR_ACCOUNT_NEW, selectedAccountForLaunch.username + ".json");
+                            if (collidingAccount.exists()) {
+                                selectedAccountForLaunch.username = previousAccountName;
+                                throw new IOException("Ely.by returned a profile name already used by another saved account. Remove or rename that account first.");
+                            }
+                        }
+                        selectedAccountForLaunch.save();
+                        if (!previousAccountName.equals(selectedAccountForLaunch.username)) {
+                            File previousFile = new File(Tools.DIR_ACCOUNT_NEW, previousAccountName + ".json");
+                            if (previousFile.exists()) previousFile.delete();
+                            ElyByTokenStore.deleteToken(previousAccountName);
+                            if (previousAccountName.equals(PojavProfile.getCurrentProfileName(this))) {
+                                PojavProfile.setCurrentProfile(this, selectedAccountForLaunch.username);
+                            }
+                        }
+                        Tools.runOnUiThread(() -> {
+                            mElyByLaunchValidationInProgress = false;
+                            if (mAccountSpinner != null) mAccountSpinner.refreshAccounts();
+                            mElyByLaunchValidationPassed = true;
+                            ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true);
+                        });
+                    } catch (ElyByAuthClient.AuthException exception) {
+                        if (exception.isInvalidSession()) {
+                            ElyByTokenStore.deleteToken(previousAccountName);
+                            selectedAccountForLaunch.accessToken = ElyByTokenStore.SECURE_TOKEN_MARKER;
+                            selectedAccountForLaunch.requiresReauthentication = true;
+                            try { selectedAccountForLaunch.save(); } catch (IOException ignored) { }
+                        }
+                        final String message = exception.isInvalidSession()
+                                ? getString(R.string.auth_elyby_session_expired)
+                                : exception.kind == ElyByAuthClient.ErrorKind.NETWORK
+                                    ? getString(R.string.auth_elyby_refresh_network_error) : exception.getMessage();
+                        Tools.runOnUiThread(() -> {
+                            mElyByLaunchValidationInProgress = false;
+                            if (exception.isInvalidSession() && mAccountSpinner != null) mAccountSpinner.refreshAccounts();
+                            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                            if (exception.isInvalidSession()) ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+                        });
+                    } catch (IOException exception) {
+                        String message = exception.getMessage() == null
+                                ? "Could not save the updated Ely.by session securely." : exception.getMessage();
+                        Tools.runOnUiThread(() -> {
+                            mElyByLaunchValidationInProgress = false;
+                            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                        });
+                    } catch (Exception exception) {
+                        Tools.runOnUiThread(() -> {
+                            mElyByLaunchValidationInProgress = false;
+                            Toast.makeText(this, "Could not validate the Ely.by session. Please sign in again if this continues.", Toast.LENGTH_LONG).show();
+                        });
+                    }
+                });
+                return false;
+            }
+        }
+
         if(mProgressLayout.hasProcesses()){
             Toast.makeText(this, R.string.tasks_ongoing, Toast.LENGTH_LONG).show();
             return false;

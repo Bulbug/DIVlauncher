@@ -16,6 +16,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.InputType;
+import android.widget.EditText;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -29,10 +31,13 @@ import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.core.content.res.ResourcesCompat;
 
 
+import net.kdt.pojavlaunch.PojavApplication;
 import net.kdt.pojavlaunch.PojavProfile;
 import net.kdt.pojavlaunch.R;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.authenticator.listener.DoneListener;
+import net.kdt.pojavlaunch.authenticator.elyby.ElyByTokenStore;
+import net.kdt.pojavlaunch.authenticator.elyby.ElyByAuthClient;
 import net.kdt.pojavlaunch.authenticator.listener.ErrorListener;
 import net.kdt.pojavlaunch.authenticator.listener.ProgressListener;
 import net.kdt.pojavlaunch.authenticator.microsoft.PresentedException;
@@ -46,6 +51,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 import fr.spse.extended_view.ExtendedTextView;
@@ -61,6 +69,7 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
     private final List<String> mAccountList = new ArrayList<>(2);
     private MinecraftAccount mSelectecAccount = null;
+    private final Set<String> mElyByRefreshInProgress = Collections.synchronizedSet(new HashSet<>());
 
     /* Display the head of the current profile, here just to allow bitmap recycling */
     private BitmapDrawable mHeadDrawable;
@@ -92,16 +101,20 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
     private final DoneListener mDoneListener = account -> {
         Toast.makeText(getContext(), R.string.main_login_done, Toast.LENGTH_SHORT).show();
 
-        // Check if the account being added is not one that is already existing
-        // Like login twice on the same mc account...
-        for(String mcAccountName : mAccountList){
-            if(mcAccountName.equals(account.username)) return;
+        // Reauthentication can return an account that is already saved. Select/update it
+        // instead of silently discarding the newly authenticated session.
+        for (int i = 1; i < mAccountList.size(); i++) {
+            if (mAccountList.get(i).equals(account.username)) {
+                mSelectecAccount = account;
+                reloadAccounts(true, i);
+                invalidate();
+                return;
+            }
         }
 
-        mSelectecAccount = account;
-        invalidate();
         mAccountList.add(account.username);
-        reloadAccounts(false, mAccountList.size() -1);
+        reloadAccounts(true, mAccountList.size() - 1);
+        invalidate();
     };
 
     private final ErrorListener mErrorListener = errorMessage -> {
@@ -134,17 +147,29 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
         if(value[1].isEmpty()){ // Test mode
             MinecraftAccount account = new MinecraftAccount();
             account.username = value[0];
+            account.authType = MinecraftAccount.TYPE_OFFLINE;
+            account.accessToken = "0";
+            account.clientToken = "0";
+            account.profileId = MinecraftAccount.offlineUuid(account.username);
+            account.isMicrosoft = false;
             try {
                 account.save();
-            }catch (IOException e){
-                Log.e("McAccountSpinner", "Failed to save the account : " + e);
+                mDoneListener.onLoginDone(account);
+            } catch (IOException e){
+                Tools.showError(getContext(), "Could not save the offline account.", e);
             }
-
-            mDoneListener.onLoginDone(account);
         }
         return false;
     };
 
+
+    private final ExtraListener<MinecraftAccount> mElyByLoginListener = (key, account) -> {
+        if (account != null && account.isElyBy() && account.hasElyBySession()) {
+            mLoginBarPaint.setColor(getResources().getColor(R.color.minebutton_color));
+            mDoneListener.onLoginDone(account);
+        }
+        return false;
+    };
 
     @SuppressLint("ClickableViewAccessibility")
     private void init(){
@@ -159,6 +184,7 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
         ExtraCore.addExtraListener(ExtraConstants.MOJANG_LOGIN_TODO, mMojangLoginListener);
         ExtraCore.addExtraListener(ExtraConstants.MICROSOFT_LOGIN_TODO, mMicrosoftLoginListener);
+        ExtraCore.addExtraListener(ExtraConstants.ELYBY_LOGIN_DONE, mElyByLoginListener);
     }
 
 
@@ -193,12 +219,28 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
     }
 
     private void removeAccount(int position) {
-        if(position == 0) return;
-        File accountFile = new File(Tools.DIR_ACCOUNT_NEW, mAccountList.get(position)+".json");
+        if(position <= 0 || position >= mAccountList.size()) return;
+        String accountName = mAccountList.get(position);
+        boolean wasActive = accountName.equals(PojavProfile.getCurrentProfileName(getContext()));
+        MinecraftAccount removedAccount = MinecraftAccount.load(accountName);
+        if (removedAccount != null && removedAccount.isElyBy() && removedAccount.hasElyBySession()) {
+            final String accessToken = removedAccount.accessToken;
+            final String clientToken = removedAccount.clientToken;
+            // A failed network logout must never prevent local removal. Tokens are not logged.
+            PojavApplication.sExecutorService.execute(() -> {
+                try { ElyByAuthClient.invalidate(accessToken, clientToken); } catch (Exception ignored) { }
+            });
+        }
+        ElyByTokenStore.deleteToken(accountName);
+        File accountFile = new File(Tools.DIR_ACCOUNT_NEW, accountName + ".json");
         if(accountFile.exists()) accountFile.delete();
-        mAccountList.remove(position);
+        if (wasActive) PojavProfile.setCurrentProfile(getContext(), null);
+        reloadAccounts(true, 0);
+    }
 
-        reloadAccounts(false, 0);
+    /** Refresh account labels after the active session was updated. */
+    public void refreshAccounts() {
+        reloadAccounts(true, 0);
     }
 
     @Keep
@@ -209,7 +251,7 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
     /** Allows checking whether we have an online account */
     public boolean isAccountOnline(){
-        return mSelectecAccount != null && !mSelectecAccount.accessToken.equals("0");
+        return mSelectecAccount != null && !mSelectecAccount.isLocal();
     }
 
     public MinecraftAccount getSelectedAccount(){
@@ -254,8 +296,13 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
             mAccountList.add(getContext().getString(R.string.main_add_account));
             File accountFolder = new File(Tools.DIR_ACCOUNT_NEW);
             if(accountFolder.exists()){
-                for (String fileName : accountFolder.list()) {
-                    mAccountList.add(fileName.substring(0, fileName.length() - 5));
+                String[] fileNames = accountFolder.list();
+                if (fileNames != null) {
+                    for (String fileName : fileNames) {
+                        if (fileName.endsWith(".json") && fileName.length() > 5) {
+                            mAccountList.add(fileName.substring(0, fileName.length() - 5));
+                        }
+                    }
                 }
             }
         }
@@ -276,7 +323,7 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
     }
 
     private void performLogin(MinecraftAccount minecraftAccount){
-        if(minecraftAccount.isLocal()) return;
+        if (minecraftAccount == null || minecraftAccount.isLocal()) return;
 
         mLoginBarPaint.setColor(getResources().getColor(R.color.minebutton_color));
         if(minecraftAccount.isMicrosoft){
@@ -286,6 +333,11 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
                         .performLogin(mProgressListener, mDoneListener, mErrorListener);
             }
             return;
+        }
+        // Ely.by refresh/validation is performed when Play is pressed so a selection change
+        // never causes a network request or races the launch process.
+        if (minecraftAccount.isElyBy() && !minecraftAccount.hasElyBySession()) {
+            Toast.makeText(getContext(), R.string.auth_elyby_session_expired, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -307,16 +359,67 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
             }
             setSelection(position);
         }else {
-            // Get the current profile, or the first available profile if the wanted one is unavailable
+            // Restore the active profile; if it was removed or corrupted, select the first saved account.
             selectedAccount = PojavProfile.getCurrentProfileContent(getContext(), null);
-            int spinnerPosition = selectedAccount == null
-                    ? mAccountList.size() <= 1 ? 0 : 1
-                    : mAccountList.indexOf(selectedAccount.username);
+            int spinnerPosition = selectedAccount == null ? -1 : mAccountList.indexOf(selectedAccount.username);
+            if (spinnerPosition < 1 && mAccountList.size() > 1) {
+                spinnerPosition = 1;
+                String fallbackName = mAccountList.get(spinnerPosition);
+                PojavProfile.setCurrentProfile(getContext(), fallbackName);
+                selectedAccount = PojavProfile.getCurrentProfileContent(getContext(), fallbackName);
+            }
+            if (spinnerPosition < 0) spinnerPosition = 0;
             setSelection(spinnerPosition, false);
         }
 
         mSelectecAccount = selectedAccount;
         setImageFromSelectedAccount();
+    }
+
+    private void showRenameOfflineDialog(Context context, String oldName) {
+        MinecraftAccount account = MinecraftAccount.load(oldName);
+        if (account == null || !account.isOffline()) {
+            Toast.makeText(context, "Only offline profiles can be renamed here.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        EditText nameInput = new EditText(context);
+        nameInput.setSingleLine(true);
+        nameInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        nameInput.setHint(R.string.auth_rename_offline_hint);
+        nameInput.setText(oldName);
+        nameInput.setSelection(nameInput.getText().length());
+        int padding = (int) (20 * context.getResources().getDisplayMetrics().density);
+        nameInput.setPadding(padding, padding / 2, padding, padding / 2);
+
+        new AlertDialog.Builder(context)
+                .setTitle(R.string.auth_rename_offline)
+                .setView(nameInput)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    String newName = nameInput.getText().toString().trim();
+                    if (!MinecraftAccount.isValidMinecraftUsername(newName)
+                            || (!oldName.equals(newName) && new File(Tools.DIR_ACCOUNT_NEW, newName + ".json").exists())) {
+                        Toast.makeText(context, R.string.auth_rename_offline_invalid, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (oldName.equals(newName)) return;
+
+                    boolean wasActive = oldName.equals(PojavProfile.getCurrentProfileName(context));
+                    account.username = newName;
+                    account.authType = MinecraftAccount.TYPE_OFFLINE;
+                    account.profileId = MinecraftAccount.offlineUuid(newName);
+                    account.accessToken = "0";
+                    try {
+                        account.save();
+                        File oldFile = new File(Tools.DIR_ACCOUNT_NEW, oldName + ".json");
+                        if (oldFile.exists()) oldFile.delete();
+                        if (wasActive) PojavProfile.setCurrentProfile(context, newName);
+                        reloadAccounts(true, 0);
+                    } catch (IOException exception) {
+                        Tools.showError(context, "Could not rename the offline profile.", exception);
+                    }
+                })
+                .show();
     }
 
     @Deprecated()
@@ -359,15 +462,24 @@ public class mcAccountSpinner extends AppCompatSpinner implements AdapterView.On
 
             ExtendedTextView textview = convertView.findViewById(R.id.account_item);
             ImageView deleteButton = convertView.findViewById(R.id.delete_account_button);
-            textview.setText(super.getItem(position));
+            String username = super.getItem(position);
 
             // Handle the "Add account section"
             if(position == 0) {
+                textview.setText(username);
                 textview.setCompoundDrawables(ResourcesCompat.getDrawable(parent.getResources(), R.drawable.ic_add, null), null, null, null);
+                textview.setOnLongClickListener(null);
                 deleteButton.setVisibility(View.GONE);
             }
             else {
-                String username = super.getItem(position);
+                MinecraftAccount account = MinecraftAccount.load(username);
+                String typeLabel = account == null ? "Account data unavailable" : account.getAuthTypeLabel();
+                String activeMark = position == getSelectedItemPosition() ? "✓ " : "";
+                textview.setText(activeMark + username + " · " + typeLabel);
+                textview.setOnLongClickListener(v -> {
+                    showRenameOfflineDialog(getContext(), username);
+                    return true;
+                });
                 Drawable accountHead = mImageCache.get(username);
                 if (accountHead == null){
                     accountHead = new BitmapDrawable(parent.getResources(), MinecraftAccount.getSkinFace(username));

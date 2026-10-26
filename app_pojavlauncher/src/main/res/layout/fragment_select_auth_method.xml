@@ -35,11 +35,18 @@
             android:text="@string/auth_microsoft" />
 
         <com.kdt.mcgui.MineButton
+            android:id="@+id/button_elyby_authentication"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_42sdp"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:text="@string/auth_elyby" />
+
+        <com.kdt.mcgui.MineButton
             android:id="@+id/button_local_authentication"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_42sdp"
             android:layout_marginTop="@dimen/_10sdp"
-            android:text="@string/auth_demo" />
+            android:text="@string/auth_offline" />
 
         <TextView
             android:layout_width="match_parent"
