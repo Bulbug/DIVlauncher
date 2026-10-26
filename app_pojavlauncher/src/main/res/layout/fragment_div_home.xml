@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/fragment_menu_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_app">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/_10sdp">
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guide_1"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.3333" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guide_2"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.6667" />
+
+            <!-- Hero card: current profile + Play -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/hero_card"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/hero_background"
+                android:padding="@dimen/_10sdp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <ImageView
+                    android:id="@+id/hero_art"
+                    android:layout_width="@dimen/_48sdp"
+                    android:layout_height="@dimen/_48sdp"
+                    android:src="@drawable/ic_hero_art"
+                    android:importantForAccessibility="no"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/hero_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:text="@string/home_ready"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="12sp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/hero_art" />
+
+                <com.kdt.mcgui.mcVersionSpinner
+                    android:id="@+id/mc_version_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/_36sdp"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:layout_marginTop="@dimen/padding_medium"
+                    android:background="@drawable/field_background"
+                    android:drawableEnd="@drawable/spinner_arrow"
+                    app:drawableEndPadding="@dimen/_1sdp"
+                    app:drawableEndSize="@dimen/_12sdp"
+                    app:drawableStartIntegerScaling="true"
+                    app:drawableStartSize="@dimen/_30sdp"
+                    app:layout_constraintTop_toBottomOf="@id/hero_label"
+                    app:layout_constraintStart_toEndOf="@id/hero_art"
+                    app:layout_constraintEnd_toStartOf="@+id/edit_profile_button" />
+
+                <ImageButton
+                    android:id="@+id/edit_profile_button"
+                    android:layout_width="@dimen/_36sdp"
+                    android:layout_height="0dp"
+                    android:layout_marginHorizontal="@dimen/padding_medium"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_edit_profile"
+                    app:layout_constraintTop_toTopOf="@id/mc_version_spinner"
+                    app:layout_constraintBottom_toBottomOf="@id/mc_version_spinner"
+                    app:layout_constraintEnd_toStartOf="@+id/play_button" />
+
+                <com.kdt.mcgui.MineButton
+                    android:id="@+id/play_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/_42sdp"
+                    android:minWidth="@dimen/_66sdp"
+                    android:paddingHorizontal="@dimen/_14sdp"
+                    android:text="@string/main_play"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:id="@+id/quick_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_14sdp"
+                android:layout_marginStart="@dimen/padding_medium"
+                android:text="@string/home_quick_actions"
+                android:textColor="@color/primary_text"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:layout_constraintTop_toBottomOf="@id/hero_card"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <com.kdt.mcgui.LauncherMenuButton
+                android:id="@+id/news_button"
+                style="@style/LauncherMenuButton.Universal"
+                android:layout_width="0dp"
+                android:drawableStart="@drawable/ic_menu_news"
+                android:text="@string/mcl_tab_wiki"
+                app:layout_constraintTop_toBottomOf="@id/quick_label"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/guide_1"/>
+
+            <com.kdt.mcgui.LauncherMenuButton
+                android:id="@+id/discord_button"
+                style="@style/LauncherMenuButton.Universal"
+                android:layout_width="0dp"
+                android:drawableStart="@drawable/ic_discord"
+                android:text="@string/mcl_button_discord"
+                app:layout_constraintTop_toBottomOf="@id/quick_label"
+                app:layout_constraintStart_toEndOf="@id/guide_1"
+                app:layout_constraintEnd_toStartOf="@id/guide_2"/>
+
+            <com.kdt.mcgui.LauncherMenuButton
+                android:id="@+id/custom_control_button"
+                style="@style/LauncherMenuButton.Universal"
+                android:layout_width="0dp"
+                android:drawableStart="@drawable/ic_menu_custom_controls"
+                android:text="@string/mcl_option_customcontrol"
+                app:layout_constraintTop_toBottomOf="@id/quick_label"
+                app:layout_constraintStart_toEndOf="@id/guide_2"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <com.kdt.mcgui.LauncherMenuButton
+                android:id="@+id/install_jar_button"
+                style="@style/LauncherMenuButton.Universal"
+                android:layout_width="0dp"
+                android:drawableStart="@drawable/ic_menu_install_jar"
+                android:text="@string/main_install_jar_file"
+                app:layout_constraintTop_toBottomOf="@id/news_button"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/guide_1"/>
+
+            <com.kdt.mcgui.LauncherMenuButton
+                android:id="@+id/share_logs_button"
+                style="@style/LauncherMenuButton.Universal"
+                android:layout_width="0dp"
+                android:drawableStart="@android:drawable/ic_menu_share"
+                android:text="@string/main_share_logs"
+                app:layout_constraintTop_toBottomOf="@id/news_button"
+                app:layout_constraintStart_toEndOf="@id/guide_1"
+                app:layout_constraintEnd_toStartOf="@id/guide_2"/>
+
+            <com.kdt.mcgui.LauncherMenuButton
+                android:id="@+id/open_files_button"
+                style="@style/LauncherMenuButton.Universal"
+                android:layout_width="0dp"
+                android:drawableStart="@drawable/ic_folder"
+                android:text="@string/mcl_button_open_directory"
+                app:layout_constraintTop_toBottomOf="@id/news_button"
+                app:layout_constraintStart_toEndOf="@id/guide_2"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

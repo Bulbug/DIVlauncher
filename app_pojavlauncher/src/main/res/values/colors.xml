@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="control_button_color">#4CC4C4C4</color>
+    <color name="control_button_pressed_color">#4D000000</color>
+
+    <!-- DIVlauncher palette: near-black blue-grey surfaces, one periwinkle accent -->
+    <color name="accent">#8E9CFF</color>
+    <color name="accent_pressed">#7886F2</color>
+    <color name="accent_on">#0C0E16</color>
+    <color name="surface_raised">#1C2029</color>
+    <color name="nav_selected">#262C4D</color>
+    <color name="surface_pressed">#2A3040</color>
+
+    <color name="minebutton_color">@color/accent</color>
+    <color name="background_app">#0E1014</color>
+    <color name="divider">@color/background_overlay</color>
+    <color name="background_overlay">#262B36</color>
+    <color name="background_status_bar">#151820</color>
+    <color name="background_bottom_bar">#151820</color>
+
+    <color name="error">#FF6B6B</color>
+
+    <color name="primary_text">#ECEEF4</color>
+    <color name="secondary_text">#8D93A3</color>
+</resources>

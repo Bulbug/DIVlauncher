@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_app">
+
+    <!-- Navigation rail -->
+    <LinearLayout
+        android:id="@+id/nav_rail"
+        android:layout_width="@dimen/_66sdp"
+        android:layout_height="0dp"
+        android:background="@color/background_status_bar"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="@dimen/padding_moderate"
+        android:paddingBottom="@dimen/padding_moderate"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageView
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:src="@drawable/ic_div_logo"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:id="@+id/nav_home"
+            style="@style/NavItem">
+            <ImageView
+                style="@style/NavIcon"
+                android:src="@drawable/ic_nav_home" />
+            <TextView
+                style="@style/NavLabel"
+                android:text="@string/nav_home" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/nav_profiles"
+            style="@style/NavItem">
+            <ImageView
+                style="@style/NavIcon"
+                android:src="@drawable/ic_nav_profiles" />
+            <TextView
+                style="@style/NavLabel"
+                android:text="@string/nav_profiles" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/nav_mods"
+            style="@style/NavItem">
+            <ImageView
+                style="@style/NavIcon"
+                android:src="@drawable/ic_nav_mods" />
+            <TextView
+                style="@style/NavLabel"
+                android:text="@string/nav_mods" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/nav_controls"
+            style="@style/NavItem">
+            <ImageView
+                style="@style/NavIcon"
+                android:src="@drawable/ic_nav_controls" />
+            <TextView
+                style="@style/NavLabel"
+                android:text="@string/nav_controls" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:id="@+id/nav_settings"
+            style="@style/NavItem">
+            <ImageView
+                style="@style/NavIcon"
+                android:src="@drawable/ic_nav_settings" />
+            <TextView
+                style="@style/NavLabel"
+                android:text="@string/nav_settings" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.kdt.mcgui.mcAccountSpinner
+        android:id="@+id/account_spinner"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/_42sdp"
+        android:dropDownWidth="wrap_content"
+        android:dropDownVerticalOffset="@dimen/_42sdp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/nav_rail"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Kept for LauncherActivity; navigation now lives in the rail -->
+    <ImageButton
+        android:id="@+id/setting_button"
+        android:layout_width="@dimen/_52sdp"
+        android:layout_height="@dimen/_42sdp"
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackground"
+        android:src="@drawable/ic_menu_settings"
+        android:scaleType="fitCenter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Holding most of the dynamic content -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/container_fragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toEndOf="@id/nav_rail"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/progress_layout"
+        app:layout_constraintTop_toBottomOf="@+id/account_spinner" />
+
+    <com.kdt.mcgui.ProgressLayout
+        android:id="@+id/progress_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/nav_rail"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
