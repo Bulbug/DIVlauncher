@@ -25,6 +25,7 @@ import net.kdt.pojavlaunch.extra.ExtraConstants;
 import net.kdt.pojavlaunch.extra.ExtraCore;
 import net.kdt.pojavlaunch.value.MinecraftAccount;
 
+import java.io.File;
 import java.io.IOException;
 
 public class ElyByLoginFragment extends Fragment {
