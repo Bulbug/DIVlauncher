@@ -16,12 +16,19 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import net.kdt.pojavlaunch.R;
+import net.kdt.pojavlaunch.extra.ExtraConstants;
+import net.kdt.pojavlaunch.extra.ExtraCore;
+import net.kdt.pojavlaunch.progresskeeper.ProgressKeeper;
+import net.kdt.pojavlaunch.progresskeeper.TaskCountListener;
+import net.kdt.pojavlaunch.tasks.AsyncMinecraftDownloader;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.profiles.ProfileIconCache;
 import net.kdt.pojavlaunch.value.launcherprofiles.LauncherProfiles;
 import net.kdt.pojavlaunch.value.launcherprofiles.MinecraftProfile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +38,12 @@ import java.util.Locale;
 public class ProfilesFragment extends Fragment {
     public static final String TAG = "ProfilesFragment";
     private ProfilesAdapter mAdapter;
+    // Refresh the "Downloaded" labels when a download finishes
+    private final TaskCountListener mTaskCountListener = taskCount -> {
+        if(taskCount == 0) Tools.runOnUiThread(() -> {
+            if(isAdded() && mAdapter != null) mAdapter.reload();
+        });
+    };
 
     public ProfilesFragment() {
         super(R.layout.fragment_profiles);
@@ -56,6 +69,34 @@ public class ProfilesFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if(mAdapter != null) mAdapter.reload();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        ProgressKeeper.addTaskCountListener(mTaskCountListener, false);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        ProgressKeeper.removeTaskCountListener(mTaskCountListener);
+    }
+
+    /** Whether the files of the version this profile uses are already on the device */
+    private static boolean isDownloaded(MinecraftProfile profile) {
+        if(profile.lastVersionId == null || Tools.DIR_HOME_VERSION == null) return false;
+        String id = AsyncMinecraftDownloader.normalizeVersionId(profile.lastVersionId);
+        File dir = new File(Tools.DIR_HOME_VERSION, id);
+        File json = new File(dir, id + ".json");
+        if(!json.exists()) return false;
+        if(new File(dir, id + ".jar").exists()) return true;
+        // Modded versions reuse the jar of the version they inherit from
+        try {
+            return Tools.read(json).contains("\"inheritsFrom\"");
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     private static String versionLabel(Context context, MinecraftProfile profile) {
@@ -125,7 +166,11 @@ public class ProfilesFragment extends Fragment {
             Context context = holder.itemView.getContext();
 
             holder.name.setText(title(context, key, profile));
-            holder.version.setText(versionLabel(context, profile));
+            boolean downloaded = isDownloaded(profile);
+            holder.version.setText(versionLabel(context, profile) + " \u00b7 " + context.getString(
+                    downloaded ? R.string.profile_downloaded : R.string.profile_not_downloaded));
+            holder.download.setVisibility(downloaded ? View.GONE : View.VISIBLE);
+            holder.download.setOnClickListener(v -> ExtraCore.setValue(ExtraConstants.DOWNLOAD_VERSION, key));
             String tag = loaderTag(profile);
             holder.tag.setText(tag);
             holder.tag.setVisibility(tag.isEmpty() ? View.GONE : View.VISIBLE);
@@ -147,13 +192,14 @@ public class ProfilesFragment extends Fragment {
 
         class Holder extends RecyclerView.ViewHolder {
             final ImageView icon;
-            final ImageButton edit;
+            final ImageButton edit, download;
             final TextView name, version, tag;
 
             Holder(@NonNull View itemView) {
                 super(itemView);
                 icon = itemView.findViewById(R.id.profile_icon);
                 edit = itemView.findViewById(R.id.profile_edit);
+                download = itemView.findViewById(R.id.profile_download);
                 name = itemView.findViewById(R.id.profile_name);
                 version = itemView.findViewById(R.id.profile_version);
                 tag = itemView.findViewById(R.id.profile_tag);

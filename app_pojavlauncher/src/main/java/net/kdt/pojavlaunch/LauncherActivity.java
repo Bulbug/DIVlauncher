@@ -161,6 +161,39 @@ public class LauncherActivity extends BaseActivity {
         return false;
     };
 
+    private final ExtraListener<String> mDownloadVersionListener = (key, profileKey) -> {
+        if(mProgressLayout.hasProcesses()){
+            Toast.makeText(this, R.string.tasks_ongoing, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        MinecraftProfile prof = LauncherProfiles.mainProfileJson == null ? null
+                : LauncherProfiles.mainProfileJson.profiles.get(profileKey);
+        if (prof == null || prof.lastVersionId == null || "Unknown".equals(prof.lastVersionId)){
+            Toast.makeText(this, R.string.error_no_version, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        final String normalizedVersionId = AsyncMinecraftDownloader.normalizeVersionId(prof.lastVersionId);
+        JMinecraftVersionList.Version mcVersion = AsyncMinecraftDownloader.getListedVersion(normalizedVersionId);
+        final Context appContext = getApplicationContext();
+
+        new MinecraftDownloader().start(this, mcVersion, normalizedVersionId,
+                new AsyncMinecraftDownloader.DoneListener() {
+                    @Override
+                    public void onDownloadDone() {
+                        ProgressKeeper.waitUntilDone(() -> Tools.runOnUiThread(() ->
+                                Toast.makeText(appContext,
+                                        appContext.getString(R.string.profile_download_done, normalizedVersionId),
+                                        Toast.LENGTH_LONG).show()));
+                    }
+
+                    @Override
+                    public void onDownloadFailed(Throwable throwable) {
+                        Tools.showErrorRemote(appContext.getString(R.string.mc_download_failed), throwable);
+                    }
+                });
+        return false;
+    };
+
     private final TaskCountListener mDoubleLaunchPreventionListener = taskCount -> {
         // Hide the notification that starts the game if there are tasks executing.
         // Prevents the user from trying to launch the game with tasks ongoing.
@@ -225,6 +258,7 @@ public class LauncherActivity extends BaseActivity {
         ExtraCore.addExtraListener(ExtraConstants.SELECT_AUTH_METHOD, mSelectAuthMethod);
 
         ExtraCore.addExtraListener(ExtraConstants.LAUNCH_GAME, mLaunchGameListener);
+        ExtraCore.addExtraListener(ExtraConstants.DOWNLOAD_VERSION, mDownloadVersionListener);
 
         new AsyncVersionList().getVersionList(versions -> ExtraCore.setValue(ExtraConstants.RELEASE_TABLE, versions), false);
 
@@ -266,6 +300,7 @@ public class LauncherActivity extends BaseActivity {
         ExtraCore.removeExtraListenerFromValue(ExtraConstants.BACK_PREFERENCE, mBackPreferenceListener);
         ExtraCore.removeExtraListenerFromValue(ExtraConstants.SELECT_AUTH_METHOD, mSelectAuthMethod);
         ExtraCore.removeExtraListenerFromValue(ExtraConstants.LAUNCH_GAME, mLaunchGameListener);
+        ExtraCore.removeExtraListenerFromValue(ExtraConstants.DOWNLOAD_VERSION, mDownloadVersionListener);
 
         getSupportFragmentManager().unregisterFragmentLifecycleCallbacks(mFragmentCallbackListener);
     }

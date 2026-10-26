@@ -29,6 +29,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <ImageButton
+        android:id="@+id/profile_download"
+        android:layout_width="@dimen/_36sdp"
+        android:layout_height="@dimen/_36sdp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/profile_download"
+        android:src="@drawable/ic_download"
+        android:tint="@color/accent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/profile_edit" />
+
     <TextView
         android:id="@+id/profile_name"
         android:layout_width="0dp"

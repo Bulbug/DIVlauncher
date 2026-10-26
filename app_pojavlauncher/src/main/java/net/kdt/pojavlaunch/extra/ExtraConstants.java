@@ -19,6 +19,8 @@ public class ExtraConstants {
     public static final String REFRESH_VERSION_SPINNER = "refresh_version";
     /* ExtraCore Constant: When we want to launch the game */
     public static final String LAUNCH_GAME = "launch_game";
+    /* ExtraCore Constant: Download the version of a profile without launching it. The value is the profile key, as a String */
+    public static final String DOWNLOAD_VERSION = "download_version";
 
 
 

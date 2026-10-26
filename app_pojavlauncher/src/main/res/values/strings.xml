@@ -441,4 +441,11 @@
     <string name="profile_edit">Edit profile</string>
     <string name="settings_general">General</string>
     <string name="auth_add_account">Add an account</string>
+    <string name="profile_download">Download</string>
+    <string name="profile_downloaded">Downloaded</string>
+    <string name="profile_not_downloaded">Not downloaded</string>
+    <string name="profile_download_done">%1$s is downloaded and ready to play</string>
+    <string name="auth_microsoft">Microsoft account</string>
+    <string name="auth_demo">Demo account</string>
+    <string name="auth_hint">The full game needs a Microsoft account that owns Minecraft: Java Edition. A demo account can only play the official demo.</string>
 </resources>
