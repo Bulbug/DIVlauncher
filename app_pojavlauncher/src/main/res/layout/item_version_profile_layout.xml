@@ -5,8 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:background="?attr/selectableItemBackground"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/_44sdp"
-    android:paddingStart="@dimen/_12sdp"
+    android:layout_height="52dp"
+    android:paddingStart="16dp"
+    android:textColor="@color/primary_text"
+    android:textSize="14sp"
     app:drawableStartSize="@dimen/_28sdp"
     app:drawableStartIntegerScaling="true"
 

@@ -61,6 +61,7 @@ public class ElyByLoginFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        view.findViewById(R.id.login_back).setOnClickListener(v -> requireActivity().getOnBackPressedDispatcher().onBackPressed());
         progressBar = view.findViewById(R.id.elyby_login_progress);
         statusText = view.findViewById(R.id.elyby_login_status);
         signInButton = view.findViewById(R.id.elyby_login_button);

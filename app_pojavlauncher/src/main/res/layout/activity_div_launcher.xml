@@ -181,6 +181,9 @@
         android:id="@+id/progress_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="8dp"
         app:layout_constraintStart_toEndOf="@id/nav_rail"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />

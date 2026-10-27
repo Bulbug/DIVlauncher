@@ -31,6 +31,7 @@ public class LocalLoginFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         mUsernameEditText = view.findViewById(R.id.login_edit_email);
+        view.findViewById(R.id.login_back).setOnClickListener(v -> requireActivity().getOnBackPressedDispatcher().onBackPressed());
         view.findViewById(R.id.login_button).setOnClickListener(v -> {
             String username = mUsernameEditText.getText().toString().trim();
             Context context = v.getContext();

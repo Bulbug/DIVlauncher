@@ -2,6 +2,9 @@
 <ExpandableListView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/expendable_list_view"
+    android:divider="@null"
+    android:dividerHeight="0dp"
+    android:childDivider="@null"
     android:layout_width="match_parent"
     android:layout_height="@dimen/_200sdp">
 

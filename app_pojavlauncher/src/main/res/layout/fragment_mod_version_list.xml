@@ -10,32 +10,21 @@
 
     <TextView
         android:id="@+id/title_textview"
-        style="@style/TextAppearance.AppCompat.Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAlignment="center"
-        android:gravity="center"
-        android:layout_marginTop="@dimen/padding_large"
-        android:text="@string/forge_dl_select_version" />
-
-    <View
-        android:id="@+id/view"
-        style="@style/ThickDivider"
-        android:layout_width="match_parent"
-        android:layout_marginTop="@dimen/padding_large"
-        app:layout_constraintTop_toBottomOf="@+id/title_textview"
-        android:paddingBottom="@dimen/fragment_padding_medium"
-        />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text=""
-        android:textColor="@color/primary_text" />
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginStart="4dp"
+        android:text="@string/forge_dl_select_version"
+        android:textColor="@color/primary_text"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <ExpandableListView
         android:scrollbarThumbVertical="@color/minebutton_color"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:childDivider="@null"
         android:id="@+id/mod_dl_expandable_version_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -64,6 +53,7 @@
 
         <Button
             android:id="@+id/forge_installer_retry_button"
+            style="@style/OutlineButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/global_retry" />

@@ -43,6 +43,9 @@
 
             <TextView
                 android:id="@+id/vprof_editor_profile_name_sub"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/profiles_profile_name"
@@ -51,10 +54,16 @@
 
             <EditText
                 android:id="@+id/vprof_editor_profile_name"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/primary_text"
+                android:textColorHint="@color/secondary_text"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/padding_large"
-                android:background="@drawable/background_line"
+                android:background="@drawable/field_background"
                 android:textSize="@dimen/_13ssp"
 
                 android:ems="10"
@@ -66,6 +75,9 @@
 
             <TextView
                 android:id="@+id/textView4"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/profiles_profile_version"
@@ -74,11 +86,17 @@
 
             <TextView
                 android:id="@+id/vprof_editor_version_spinner"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/primary_text"
+                android:textColorHint="@color/secondary_text"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
                 android:layout_marginEnd="@dimen/padding_medium"
-                android:background="@drawable/background_line"
+                android:background="@drawable/field_background"
                 android:hint="@string/version_select_hint"
                 android:paddingHorizontal="@dimen/padding_heavy"
                 android:textSize="@dimen/_13ssp"
@@ -87,7 +105,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/vprof_editor_profile_name" />
 
-            <com.kdt.mcgui.MineButton
+            <Button
+                style="@style/OutlineButton"
                 android:id="@+id/vprof_editor_version_button"
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
@@ -104,6 +123,9 @@
 
             <TextView
                 android:id="@+id/textView7"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/default_control"
@@ -112,12 +134,18 @@
 
             <TextView
                 android:id="@+id/vprof_editor_ctrl_spinner"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/primary_text"
+                android:textColorHint="@color/secondary_text"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
                 android:layout_marginEnd="@dimen/padding_medium"
 
-                android:background="@drawable/background_line"
+                android:background="@drawable/field_background"
                 android:hint="@string/use_global_default"
                 android:paddingHorizontal="@dimen/padding_heavy"
                 android:textSize="@dimen/_13ssp"
@@ -126,7 +154,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/vprof_editor_version_spinner" />
 
-            <com.kdt.mcgui.MineButton
+            <Button
+                style="@style/OutlineButton"
                 android:id="@+id/vprof_editor_ctrl_button"
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
@@ -141,6 +170,9 @@
 
             <TextView
                 android:id="@+id/textView6"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/pvc_jvmArgs"
@@ -149,10 +181,16 @@
 
             <EditText
                 android:id="@+id/vprof_editor_jre_args"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/primary_text"
+                android:textColorHint="@color/secondary_text"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:background="@drawable/background_line"
+                android:background="@drawable/field_background"
                 android:ems="10"
                 android:hint="@string/use_global_default"
                 android:inputType="text"
@@ -163,6 +201,9 @@
 
             <TextView
                 android:id="@+id/vprof_editor_beginPathView"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
 
@@ -173,11 +214,17 @@
 
             <TextView
                 android:id="@+id/vprof_editor_path"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/primary_text"
+                android:textColorHint="@color/secondary_text"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
                 android:layout_marginEnd="@dimen/padding_medium"
-                android:background="@drawable/background_line"
+                android:background="@drawable/field_background"
                 android:ems="10"
                 android:maxLines="2"
                 android:ellipsize="end"
@@ -190,7 +237,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/vprof_editor_jre_args" />
 
-            <com.kdt.mcgui.MineButton
+            <Button
+                style="@style/OutlineButton"
                 android:id="@+id/vprof_editor_path_button"
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
@@ -203,6 +251,9 @@
 
             <TextView
                 android:id="@+id/textView2"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/pedit_java_runtime"
@@ -211,31 +262,22 @@
 
             <Spinner
                 android:id="@+id/vprof_editor_spinner_runtime"
+                android:paddingStart="14dp"
+                android:paddingEnd="36dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_marginTop="32dp"
-                android:background="@drawable/background_line"
-                android:paddingVertical="0px"
+                android:background="@drawable/spinner_pill_background"
 
 
-                app:layout_constraintTop_toBottomOf="@+id/vprof_editor_path"
-
-                tools:paddingVertical="@dimen/_12sdp" />
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/_8sdp"
-                android:paddingHorizontal="@dimen/_8sdp"
-                android:rotation="180"
-                android:src="@drawable/spinner_arrow"
-
-                app:layout_constraintBottom_toBottomOf="@id/vprof_editor_spinner_runtime"
-                app:layout_constraintEnd_toEndOf="@id/vprof_editor_spinner_runtime"
-                app:layout_constraintTop_toTopOf="@id/vprof_editor_spinner_runtime" />
+                app:layout_constraintTop_toBottomOf="@+id/vprof_editor_path" />
 
 
             <TextView
                 android:id="@+id/textView3"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/pedit_renderer"
@@ -244,27 +286,16 @@
 
             <Spinner
                 android:id="@+id/vprof_editor_profile_renderer"
+                android:paddingStart="14dp"
+                android:paddingEnd="36dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_marginTop="32dp"
-                android:background="@drawable/background_line"
+                android:background="@drawable/spinner_pill_background"
                 android:dropDownWidth="match_parent"
-                android:paddingVertical="0px"
 
 
-                app:layout_constraintTop_toBottomOf="@+id/vprof_editor_spinner_runtime"
-                tools:paddingVertical="@dimen/_12sdp" />
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/_8sdp"
-                android:paddingHorizontal="@dimen/_8sdp"
-                android:rotation="180"
-                android:src="@drawable/spinner_arrow"
-
-                app:layout_constraintBottom_toBottomOf="@id/vprof_editor_profile_renderer"
-                app:layout_constraintEnd_toEndOf="@id/vprof_editor_profile_renderer"
-                app:layout_constraintTop_toTopOf="@id/vprof_editor_profile_renderer" />
+                app:layout_constraintTop_toBottomOf="@+id/vprof_editor_spinner_runtime" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -279,15 +310,18 @@
         <com.kdt.mcgui.MineButton
             android:id="@+id/vprof_editor_save_button"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:text="@string/global_save"
             android:layout_marginEnd="@dimen/padding_medium" />
 
-        <com.kdt.mcgui.MineButton
+        <Button
+            style="@style/OutlineButton"
             android:id="@+id/vprof_editor_delete_button"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
+            android:background="@drawable/outline_button_danger_background"
+            android:textColor="@color/error"
             android:layout_weight="1"
             android:layout_marginStart="@dimen/padding_medium"
             android:text="@string/global_delete" />

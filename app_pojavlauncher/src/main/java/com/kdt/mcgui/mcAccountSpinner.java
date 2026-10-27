@@ -7,6 +7,7 @@ import android.content.ContextWrapper;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -17,6 +18,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.text.InputType;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ArrayAdapter;
@@ -29,6 +35,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.ListPopupWindow;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 
 
@@ -212,10 +219,12 @@ public class mcAccountSpinner extends AppCompatSpinner {
         popup.setAnchorView(this);
         String[] accountArray = mAccountList.toArray(new String[0]);
         AccountAdapter popupAdapter = new AccountAdapter(
-                getContext(), R.layout.item_minecraft_account, accountArray);
+                getContext(), R.layout.item_minecraft_account, accountArray, true);
         popupAdapter.setDropDownViewResource(R.layout.item_minecraft_account);
         popup.setAdapter(popupAdapter);
         popup.setModal(true);
+        popup.setBackgroundDrawable(ContextCompat.getDrawable(getContext(), R.drawable.popup_background));
+        popup.setVerticalOffset((int) (6f * getResources().getDisplayMetrics().density));
         float densityScale = getResources().getDisplayMetrics().density;
         int maxPopupWidth = (int) (380f * densityScale);
         int minimumPopupWidth = (int) (240f * densityScale);
@@ -519,8 +528,17 @@ public class mcAccountSpinner extends AppCompatSpinner {
     private class AccountAdapter extends ArrayAdapter<String> {
 
         private final HashMap<String, Drawable> mImageCache = new HashMap<>();
+        /* The popup list calls getView() (not getDropDownView()), so it needs its own mode:
+         * full row with delete button. The closed spinner shows only the avatar and name. */
+        private final boolean mForPopup;
+
         public AccountAdapter(@NonNull Context context, int resource, @NonNull String[] objects) {
+            this(context, resource, objects, false);
+        }
+
+        public AccountAdapter(@NonNull Context context, int resource, @NonNull String[] objects, boolean forPopup) {
             super(context, resource, objects);
+            mForPopup = forPopup;
         }
 
         @Override
@@ -536,6 +554,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
             // Handle the "Add account section"
             if(position == 0) {
                 textview.setText(username);
+                textview.setTextColor(ContextCompat.getColor(getContext(), R.color.accent));
                 textview.setCompoundDrawables(ResourcesCompat.getDrawable(parent.getResources(), R.drawable.ic_add, null), null, null, null);
                 textview.setOnLongClickListener(null);
                 deleteButton.setVisibility(View.GONE);
@@ -543,8 +562,25 @@ public class mcAccountSpinner extends AppCompatSpinner {
             else {
                 MinecraftAccount account = MinecraftAccount.load(username);
                 String typeLabel = account == null ? "Account data unavailable" : account.getAuthTypeLabel();
-                String activeMark = position == getSelectedItemPosition() ? "✓ " : "";
-                textview.setText(activeMark + username + " · " + typeLabel);
+                boolean active = position == getSelectedItemPosition();
+                textview.setTextColor(ContextCompat.getColor(getContext(), R.color.primary_text));
+                // Two lines: bold name, then the sign-in type (and an accent "Active" mark)
+                SpannableStringBuilder row = new SpannableStringBuilder(username);
+                row.setSpan(new StyleSpan(Typeface.BOLD), 0, username.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                row.append('\n');
+                int detailStart = row.length();
+                row.append(typeLabel);
+                int detailEnd = row.length();
+                row.setSpan(new RelativeSizeSpan(0.85f), detailStart, detailEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                row.setSpan(new ForegroundColorSpan(ContextCompat.getColor(getContext(), R.color.secondary_text)), detailStart, detailEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if(active) {
+                    row.append(" · ");
+                    int activeStart = row.length();
+                    row.append(getContext().getString(R.string.account_active));
+                    row.setSpan(new RelativeSizeSpan(0.85f), activeStart, row.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    row.setSpan(new ForegroundColorSpan(ContextCompat.getColor(getContext(), R.color.accent)), activeStart, row.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                textview.setText(row);
                 textview.setOnLongClickListener(v -> {
                     showRenameOfflineDialog(getContext(), username);
                     return true;
@@ -571,7 +607,13 @@ public class mcAccountSpinner extends AppCompatSpinner {
         @Override
         public View getView(int position, View convertView, @NonNull ViewGroup parent) {
             View view = getDropDownView(position, convertView, parent);
+            if(mForPopup) return view;
+            // Closed spinner: just avatar + name on a single line, sized to the control
             view.findViewById(R.id.delete_account_button).setVisibility(View.GONE);
+            ExtendedTextView closedText = view.findViewById(R.id.account_item);
+            closedText.setText(super.getItem(position));
+            ViewGroup.LayoutParams lp = view.getLayoutParams();
+            if(lp != null) lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             return view;
         }
 

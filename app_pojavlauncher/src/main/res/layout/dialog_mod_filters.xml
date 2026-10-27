@@ -12,6 +12,9 @@
     <!-- Version filter -->
     <TextView
         android:id="@+id/search_mod_mc_version_textview"
+        android:textColor="@color/secondary_text"
+        android:textSize="12sp"
+        android:textStyle="bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/profiles_profile_version"
@@ -26,9 +29,15 @@
 
         android:layout_marginEnd="@dimen/padding_medium"
 
-        android:background="@drawable/background_line"
+        android:background="@drawable/field_background"
         android:hint="@string/version_select_hint"
-        android:paddingHorizontal="@dimen/padding_heavy"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp"
+        android:textColor="@color/primary_text"
+        android:textColorHint="@color/secondary_text"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
         android:textSize="@dimen/_13ssp"
 
         app:layout_constraintEnd_toStartOf="@+id/search_mod_mc_version_button"
@@ -37,6 +46,7 @@
 
     <Button
         android:id="@+id/search_mod_mc_version_button"
+        style="@style/OutlineButton"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:paddingHorizontal="@dimen/padding_large"
@@ -49,6 +59,9 @@
 
     <TextView
         android:id="@+id/search_mod_loader_label"
+        android:textColor="@color/secondary_text"
+        android:textSize="12sp"
+        android:textStyle="bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/padding_medium"
@@ -59,12 +72,19 @@
     <Spinner
         android:id="@+id/search_mod_loader_spinner"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/spinner_pill_background"
+        android:paddingStart="14dp"
+        android:paddingEnd="36dp"
         app:layout_constraintTop_toBottomOf="@id/search_mod_loader_label"
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/search_mod_provider_label"
+        android:textColor="@color/secondary_text"
+        android:textSize="12sp"
+        android:textStyle="bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/padding_medium"
@@ -75,7 +95,11 @@
     <Spinner
         android:id="@+id/search_mod_provider_spinner"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/spinner_pill_background"
+        android:paddingStart="14dp"
+        android:paddingEnd="36dp"
         app:layout_constraintTop_toBottomOf="@id/search_mod_provider_label"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -83,7 +107,7 @@
     <com.kdt.mcgui.MineButton
         android:id="@+id/search_mod_apply_filters"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="@string/generic_apply"
         android:layout_marginVertical="@dimen/padding_large"
 

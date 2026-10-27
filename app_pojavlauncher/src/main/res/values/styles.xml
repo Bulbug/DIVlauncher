@@ -17,11 +17,28 @@
         <item name="android:textColorPrimary">@color/primary_text</item>
         <item name="android:textColorSecondary">@color/secondary_text</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+        <item name="alertDialogTheme">@style/DivAlertDialog</item>
 
         <item name="android:textSize">13sp</item>
         <item name="android:fontFamily">sans-serif</item>
         <item name="fontFamily">sans-serif</item>
 
+    </style>
+
+    <!-- Every AlertDialog in the app: rounded panel, accent confirm buttons, quieter cancel buttons -->
+    <style name="DivAlertDialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/dialog_background</item>
+        <item name="buttonBarPositiveButtonStyle">@style/DivDialogButtonPositive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/DivDialogButtonNegative</item>
+        <item name="buttonBarNeutralButtonStyle">@style/DivDialogButtonPositive</item>
+    </style>
+    <style name="DivDialogButtonPositive" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/accent</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="DivDialogButtonNegative" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/secondary_text</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="LauncherFragment_Divider">
