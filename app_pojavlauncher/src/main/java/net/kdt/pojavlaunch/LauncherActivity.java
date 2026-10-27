@@ -108,14 +108,42 @@ public class LauncherActivity extends BaseActivity {
      * This avoids relying solely on the global ExtraCore event for a UI tap.
      */
     public void openAddAccountScreen() {
-        if (isFinishing() || isDestroyed() || mFragmentView == null) return;
+        if (isFinishing() || isDestroyed()) {
+            android.util.Log.w("DIVlauncher", "Ignoring Add Account tap because LauncherActivity is finishing");
+            return;
+        }
+
+        // Resolve the container at the moment of the tap instead of relying only on
+        // bindViews() having populated the cached field. This also avoids a silent
+        // no-op if a tap arrives during early activity setup.
+        FragmentContainerView container = mFragmentView;
+        if (container == null) container = findViewById(R.id.container_fragment);
+        if (container == null) {
+            android.util.Log.e("DIVlauncher", "Add Account tap received, but container_fragment is missing");
+            Toast.makeText(this, "Unable to open Add Account: screen container is unavailable.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         FragmentManager fm = getSupportFragmentManager();
-        // A tap while FragmentManager state is saved should be ignored rather than
-        // enqueueing repeated posts; the user can tap again once the activity resumes.
-        if (fm.isStateSaved()) return;
-        Fragment current = fm.findFragmentById(mFragmentView.getId());
-        if (current instanceof SelectAuthFragment) return;
-        Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
+        Fragment current = fm.findFragmentById(container.getId());
+        if (current instanceof SelectAuthFragment) {
+            // The chooser may already be on screen; still ensure the tap isn't silently lost.
+            return;
+        }
+
+        try {
+            // Do not silently discard the user's tap just because Android has saved
+            // FragmentManager state during a lifecycle transition. This UI navigation
+            // is safe to restore on the next activity recreation.
+            fm.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addToBackStack(SelectAuthFragment.class.getName())
+                    .replace(container.getId(), SelectAuthFragment.class, null, SelectAuthFragment.TAG)
+                    .commitAllowingStateLoss();
+        } catch (RuntimeException e) {
+            android.util.Log.e("DIVlauncher", "Failed to open Add Account screen", e);
+            Toast.makeText(this, "Unable to open Add Account: " + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+        }
     }
 
     /* Listener for the settings fragment */
