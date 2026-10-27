@@ -90,6 +90,8 @@
         android:layout_height="40dp"
         android:dropDownWidth="wrap_content"
         android:dropDownVerticalOffset="40dp"
+        android:clickable="true"
+        android:focusable="true"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toEndOf="@id/nav_rail"
         app:layout_constraintEnd_toEndOf="parent" />

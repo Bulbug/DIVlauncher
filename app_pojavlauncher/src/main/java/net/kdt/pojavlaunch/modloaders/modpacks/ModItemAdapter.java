@@ -33,6 +33,7 @@ import net.kdt.pojavlaunch.modloaders.modpacks.models.SearchFilters;
 import net.kdt.pojavlaunch.modloaders.modpacks.models.SearchResult;
 import net.kdt.pojavlaunch.progresskeeper.TaskCountListener;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -52,6 +53,7 @@ public class ModItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private final SearchResultCallback mSearchResultCallback;
     private ModItem[] mModItems;
     private final ModpackApi mModpackApi;
+    private File mTargetGameDirectory;
 
     /* Cache for ever so slightly rounding the image for the corner not to stick out of the layout */
     private final float mCornerDimensionCache;
@@ -64,10 +66,19 @@ public class ModItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
 
     public ModItemAdapter(Resources resources, ModpackApi api, SearchResultCallback callback) {
+        this(resources, api, callback, null);
+    }
+
+    public ModItemAdapter(Resources resources, ModpackApi api, SearchResultCallback callback, File targetGameDirectory) {
         mCornerDimensionCache = resources.getDimension(R.dimen._1sdp) / 250;
         mModpackApi = api;
+        mTargetGameDirectory = targetGameDirectory;
         mModItems = new ModItem[]{};
         mSearchResultCallback = callback;
+    }
+
+    public void setTargetGameDirectory(File targetGameDirectory) {
+        mTargetGameDirectory = targetGameDirectory;
     }
 
     public void performSearchQuery(SearchFilters searchFilters) {
@@ -178,7 +189,8 @@ public class ModItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     mExtendedButton.setOnClickListener(v1 -> mModpackApi.handleInstallation(
                             mExtendedButton.getContext().getApplicationContext(),
                             mModDetail,
-                            mExtendedSpinner.getSelectedItemPosition()));
+                            mExtendedSpinner.getSelectedItemPosition(),
+                            mTargetGameDirectory));
                     mExtendedSpinner.setAdapter(mLoadingAdapter);
                 } else {
                     if(isExtended()) closeDetailedView();
@@ -268,15 +280,18 @@ public class ModItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         /** Display extended info/interaction about a modpack */
         private void setStateDetailed(ModDetail detailedItem) {
-            if(detailedItem != null) {
+            boolean hasVersions = detailedItem != null && detailedItem.versionNames != null
+                    && detailedItem.versionNames.length > 0 && detailedItem.versionUrls != null
+                    && detailedItem.versionUrls.length == detailedItem.versionNames.length;
+            if(hasVersions) {
                 setInstallEnabled(true);
                 mExtendedErrorTextView.setVisibility(View.GONE);
                 mVersionAdapter.setObjects(Arrays.asList(detailedItem.versionNames));
                 mExtendedSpinner.setAdapter(mVersionAdapter);
             } else {
-                closeDetailedView();
                 setInstallEnabled(false);
                 mExtendedErrorTextView.setVisibility(View.VISIBLE);
+                mExtendedErrorTextView.setText(R.string.search_modpack_no_result);
                 mExtendedSpinner.setAdapter(null);
                 mVersionAdapter.setObjects(null);
             }

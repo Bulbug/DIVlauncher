@@ -12,8 +12,12 @@ import net.kdt.pojavlaunch.modloaders.modpacks.models.ModDetail;
 import net.kdt.pojavlaunch.modloaders.modpacks.models.ModItem;
 import net.kdt.pojavlaunch.modloaders.modpacks.models.SearchFilters;
 import net.kdt.pojavlaunch.modloaders.modpacks.models.SearchResult;
+import net.kdt.pojavlaunch.value.launcherprofiles.LauncherProfiles;
+import net.kdt.pojavlaunch.value.launcherprofiles.MinecraftProfile;
 
+import java.io.File;
 import java.io.IOException;
+import android.widget.Toast;
 
 /**
  *
@@ -48,19 +52,47 @@ public interface ModpackApi {
      * @param selectedVersion The selected version
      */
     default void handleInstallation(Context context, ModDetail modDetail, int selectedVersion) {
-        // Doing this here since when starting installation, the progress does not start immediately
-        // which may lead to two concurrent installations (very bad)
+        handleInstallation(context, modDetail, selectedVersion, null);
+    }
+
+    /** Install a mod, resource pack or shader into the selected instance; modpacks create a new instance. */
+    default void handleInstallation(Context context, ModDetail modDetail, int selectedVersion, File targetGameDirectory) {
         ProgressLayout.setProgress(ProgressLayout.INSTALL_MODPACK, 0, R.string.global_waiting);
         PojavApplication.sExecutorService.execute(() -> {
             try {
-                ModLoader loaderInfo = installMod(modDetail, selectedVersion);
-                if (loaderInfo == null) return;
-                loaderInfo.getDownloadTask(new NotificationDownloadListener(context, loaderInfo)).run();
-            }catch (IOException e) {
-                Tools.showErrorRemote(context, R.string.modpack_install_download_failed, e);
+                if (modDetail.isModpack) {
+                    ModLoader loaderInfo = installMod(modDetail, selectedVersion);
+                    if (loaderInfo == null) throw new IOException("This modpack is invalid or uses a loader this DIVlauncher build cannot install automatically.");
+                    Runnable task = loaderInfo.getDownloadTask(new NotificationDownloadListener(context, loaderInfo));
+                    if (task == null) throw new IOException("The modpack requires a loader that this launcher cannot install automatically.");
+                    task.run();
+                } else {
+                    if ("mod".equals(modDetail.projectType)
+                            && (modDetail.targetLoader == null || modDetail.targetLoader.trim().isEmpty())) {
+                        throw new IOException("This instance does not appear to have Fabric, Forge, Quilt, or NeoForge installed. Install a supported mod loader first.");
+                    }
+                    File installDirectory = targetGameDirectory;
+                    if (modDetail.targetProfileKey != null && !modDetail.targetProfileKey.isEmpty()) {
+                        if (LauncherProfiles.mainProfileJson == null) LauncherProfiles.load();
+                        MinecraftProfile selectedProfile = LauncherProfiles.mainProfileJson.profiles.get(modDetail.targetProfileKey);
+                        if (selectedProfile == null) throw new IOException("The selected instance no longer exists.");
+                        installDirectory = InstanceDirectoryResolver.resolveIsolated(modDetail.targetProfileKey, selectedProfile);
+                    }
+                    if (installDirectory == null) throw new IOException("Select an instance before installing this content.");
+                    installProject(modDetail, selectedVersion, installDirectory);
+                    Tools.runOnUiThread(() -> Toast.makeText(context,
+                            "Installed " + modDetail.title + " into the selected instance.", Toast.LENGTH_LONG).show());
+                }
+            } catch (IOException e) {
+                Tools.runOnUiThread(() -> Toast.makeText(context, "Installation failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            } finally {
+                if (!modDetail.isModpack) ProgressLayout.clearProgress(ProgressLayout.INSTALL_MODPACK);
             }
         });
     }
+
+    /** Install a single project artifact into a selected instance directory. */
+    void installProject(ModDetail modDetail, int selectedVersion, File targetGameDirectory) throws IOException;
 
     /**
      * Install the mod(pack).

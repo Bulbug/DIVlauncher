@@ -69,15 +69,18 @@ def getVersionName = {
     return TAG_STRING.trim().replace("-g", "-") + "-" + BRANCH.toString().trim()
 }
 
-def getCFApiKey = {
-    String key = System.getenv("CURSEFORGE_API_KEY");
-    if(key != null) return key;
-    File curseforgeKeyFile = new File("./curseforge_key.txt");
-    if(curseforgeKeyFile.canRead() && curseforgeKeyFile.isFile()) {
-        return curseforgeKeyFile.text;
+def getCFProxyBaseUrl = {
+    // Public proxy URL only; NEVER package the private CurseForge API key in the APK.
+    String value = System.getenv("CURSEFORGE_PROXY_BASE_URL")
+    if (value == null && project.hasProperty("curseforgeProxyBaseUrl")) value = project.property("curseforgeProxyBaseUrl")
+    value = value == null ? "" : value.trim()
+    while (value.endsWith("/")) value = value.substring(0, value.length() - 1)
+    if (!value.isEmpty() && (!value.startsWith("https://") || !value.endsWith("/v1"))) {
+        logger.warn('BUILD: CURSEFORGE_PROXY_BASE_URL must be an HTTPS proxy base ending in /v1; CurseForge integration disabled.')
+        return ""
     }
-    logger.warn('BUILD: You have no CurseForge key, the curseforge api will get disabled !');
-    return "DUMMY";
+    if (value.isEmpty()) logger.lifecycle('BUILD: CurseForge integration disabled until an HTTPS server-side API proxy is configured.')
+    return value
 }
 
 configurations {
@@ -122,7 +125,7 @@ android {
         versionCode getDateSeconds()
         versionName getVersionName()
         multiDexEnabled true //important
-        resValue 'string', 'curseforge_api_key', getCFApiKey()
+        resValue 'string', 'curseforge_proxy_base_url', getCFProxyBaseUrl()
 
         // CI builds one APK per CPU architecture: -PdivAbi=arm64-v8a
         if (project.hasProperty('divAbi')) {

@@ -32,8 +32,11 @@ public class ProfileTypeSelectFragment extends Fragment {
                 tryInstall(FabricInstallFragment.class, FabricInstallFragment.TAG));
         view.findViewById(R.id.modded_profile_forge).setOnClickListener((v)->
                 tryInstall(ForgeInstallFragment.class, ForgeInstallFragment.TAG));
-        view.findViewById(R.id.modded_profile_modpack).setOnClickListener((v)->
-                tryInstall(SearchModFragment.class, SearchModFragment.TAG));
+        view.findViewById(R.id.modded_profile_modpack).setOnClickListener((v)-> {
+            Bundle args = new Bundle();
+            args.putString("project_type", "modpack");
+            Tools.swapFragment(requireActivity(), SearchModFragment.class, SearchModFragment.TAG, args);
+        });
         view.findViewById(R.id.modded_profile_quilt).setOnClickListener((v)->
                 tryInstall(QuiltInstallFragment.class, QuiltInstallFragment.TAG));
         view.findViewById(R.id.modded_profile_bta).setOnClickListener((v)->

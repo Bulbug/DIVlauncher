@@ -44,7 +44,18 @@ public class ZipUtils {
             ZipEntry zipEntry = zipEntries.nextElement();
             String entryName = zipEntry.getName();
             if(!entryName.startsWith(dirName) || zipEntry.isDirectory()) continue;
-            File zipDestination = new File(destination, entryName.substring(dirNameLen));
+            String relativeName = entryName.substring(dirNameLen);
+            if (relativeName.isEmpty() || relativeName.startsWith("/") || relativeName.startsWith("\\")
+                    || relativeName.matches("^[A-Za-z]:.*")) {
+                throw new IOException("Unsafe ZIP entry path: " + entryName);
+            }
+            File root = destination.getCanonicalFile();
+            File zipDestination = new File(root, relativeName).getCanonicalFile();
+            String rootPath = root.getPath();
+            String rootPrefix = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
+            if (!zipDestination.getPath().startsWith(rootPrefix)) {
+                throw new IOException("Unsafe ZIP entry path: " + entryName);
+            }
             FileUtils.ensureParentDirectory(zipDestination);
             try (InputStream inputStream = zipFile.getInputStream(zipEntry);
                  OutputStream outputStream = new FileOutputStream(zipDestination)) {

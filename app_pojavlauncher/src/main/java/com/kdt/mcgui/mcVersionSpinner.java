@@ -1,6 +1,5 @@
 package com.kdt.mcgui;
 
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static net.kdt.pojavlaunch.fragments.ProfileEditorFragment.DELETED_PROFILE;
 
 import android.annotation.SuppressLint;
@@ -158,17 +157,28 @@ public class mcVersionSpinner extends ExtendedTextView {
             }
         });
 
-        // Size the dropdown to its rows instead of always reserving 184sdp.
-        // This prevents a large empty panel when only one or two profiles exist,
-        // while keeping a bounded, scrollable popup when there are many profiles.
-        int rowHeight = getResources().getDimensionPixelSize(R.dimen._52sdp);
-        int verticalPadding = 2 * getResources().getDimensionPixelSize(R.dimen._14sdp);
-        int maximumHeight = getResources().getDimensionPixelSize(R.dimen._184sdp);
-        int contentHeight = mProfileAdapter.getCount() * rowHeight + verticalPadding;
+        // Keep the profile menu anchored to the version selector. MATCH_PARENT
+        // made PopupWindow span the entire display, which obscured the home UI.
+        // Measure the real adapter rows so the popup only uses the height it needs.
+        int rowHeight = 0;
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(
+                Math.max(1, getWidth()), View.MeasureSpec.AT_MOST);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        for (int i = 0; i < mProfileAdapter.getCount(); i++) {
+            View row = mProfileAdapter.getView(i, null, mListView);
+            row.measure(widthSpec, heightSpec);
+            rowHeight += row.getMeasuredHeight();
+        }
+        int verticalPadding = mListView.getPaddingTop() + mListView.getPaddingBottom();
+        int contentHeight = rowHeight + verticalPadding;
+        int maximumHeight = Math.min(
+                getResources().getDimensionPixelSize(R.dimen._240sdp),
+                (int) (getResources().getDisplayMetrics().heightPixels * 0.55f));
         int popupHeight = Math.min(contentHeight, maximumHeight);
-        mPopupWindow = new PopupWindow(mListView, MATCH_PARENT, popupHeight);
-        mPopupWindow.setElevation(5);
-        mPopupWindow.setClippingEnabled(false);
+        int popupWidth = Math.max(1, getWidth());
+        mPopupWindow = new PopupWindow(mListView, popupWidth, popupHeight, true);
+        mPopupWindow.setElevation(getResources().getDimensionPixelSize(R.dimen._4sdp));
+        mPopupWindow.setClippingEnabled(true);
 
         // Block clicking outside of the popup window
         mPopupWindow.setOutsideTouchable(true);

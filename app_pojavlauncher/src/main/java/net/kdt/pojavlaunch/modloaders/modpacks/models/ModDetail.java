@@ -1,44 +1,62 @@
 package net.kdt.pojavlaunch.modloaders.modpacks.models;
 
-
 import androidx.annotation.NonNull;
-
 import java.util.Arrays;
 
 public class ModDetail extends ModItem {
-    /* A cheap way to map from the front facing name to the underlying id */
     public String[] versionNames;
-    public String [] mcVersionNames;
+    public String[] mcVersionNames;
     public String[] versionUrls;
-    /* SHA 1 hashes, null if a hash is unavailable */
+    /** SHA-1 hashes where the provider returns one. */
     public String[] versionHashes;
-    public ModDetail(ModItem item, String[] versionNames, String[] mcVersionNames, String[] versionUrls, String[] hashes) {
-        super(item.apiSource, item.isModpack, item.id, item.title, item.description, item.imageUrl);
+    public String[] versionHashAlgorithms;
+    /** Provider-native version IDs; required for reliable dependency/update operations. */
+    public String[] versionIds;
+    public String[] versionFileNames;
+    /** Required dependency project IDs grouped by version. */
+    public String[][] versionRequiredDependencies;
+
+    public ModDetail(ModItem item, String[] versionNames, String[] mcVersionNames,
+                     String[] versionUrls, String[] hashes) {
+        this(item, versionNames, mcVersionNames, versionUrls, hashes,
+                new String[versionNames.length], new String[versionNames.length],
+                new String[versionNames.length][], new String[versionNames.length]);
+    }
+
+    public ModDetail(ModItem item, String[] versionNames, String[] mcVersionNames,
+                     String[] versionUrls, String[] hashes, String[] versionIds,
+                     String[] fileNames, String[][] requiredDependencies) {
+        this(item, versionNames, mcVersionNames, versionUrls, hashes, versionIds, fileNames, requiredDependencies, new String[versionNames.length]);
+    }
+
+    public ModDetail(ModItem item, String[] versionNames, String[] mcVersionNames,
+                     String[] versionUrls, String[] hashes, String[] versionIds,
+                     String[] fileNames, String[][] requiredDependencies, String[] hashAlgorithms) {
+        super(item.apiSource, item.projectType, item.id, item.title, item.description, item.imageUrl);
+        targetGameVersion = item.targetGameVersion;
+        targetLoader = item.targetLoader;
+        targetProfileKey = item.targetProfileKey;
         this.versionNames = versionNames;
         this.mcVersionNames = mcVersionNames;
         this.versionUrls = versionUrls;
         this.versionHashes = hashes;
-
-        // Add the mc version to the version model
-        for (int i=0; i<versionNames.length; i++){
-            if (!versionNames[i].contains(mcVersionNames[i]))
+        this.versionHashAlgorithms = hashAlgorithms;
+        this.versionIds = versionIds;
+        this.versionFileNames = fileNames;
+        this.versionRequiredDependencies = requiredDependencies;
+        for (int i = 0; i < versionNames.length; i++) {
+            if (versionNames[i] != null && mcVersionNames[i] != null
+                    && !mcVersionNames[i].isEmpty() && !versionNames[i].contains(mcVersionNames[i])) {
                 versionNames[i] += " - " + mcVersionNames[i];
+            }
         }
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "ModDetail{" +
-                "versionNames=" + Arrays.toString(versionNames) +
-                ", mcVersionNames=" + Arrays.toString(mcVersionNames) +
-                ", versionIds=" + Arrays.toString(versionUrls) +
-                ", id='" + id + '\'' +
-                ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", imageUrl='" + imageUrl + '\'' +
-                ", apiSource=" + apiSource +
-                ", isModpack=" + isModpack +
-                '}';
+        return "ModDetail{" + "versionNames=" + Arrays.toString(versionNames) +
+                ", id='" + id + '\'' + ", title='" + title + '\'' +
+                ", projectType='" + projectType + '\'' + ", apiSource=" + apiSource + '}';
     }
 }

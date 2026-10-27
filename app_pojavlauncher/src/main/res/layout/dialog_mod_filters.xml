@@ -47,6 +47,38 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/search_mod_selected_mc_version_textview" />
 
+    <TextView
+        android:id="@+id/search_mod_loader_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/padding_medium"
+        android:text="@string/mod_browser_loader_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/search_mod_selected_mc_version_textview" />
+
+    <Spinner
+        android:id="@+id/search_mod_loader_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/search_mod_loader_label"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/search_mod_provider_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/padding_medium"
+        android:text="@string/mod_browser_provider_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/search_mod_loader_spinner" />
+
+    <Spinner
+        android:id="@+id/search_mod_provider_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/search_mod_provider_label"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <!-- Apply -->
     <com.kdt.mcgui.MineButton
         android:id="@+id/search_mod_apply_filters"
@@ -55,7 +87,7 @@
         android:text="@string/generic_apply"
         android:layout_marginVertical="@dimen/padding_large"
 
-        app:layout_constraintTop_toBottomOf="@id/search_mod_selected_mc_version_textview"
+        app:layout_constraintTop_toBottomOf="@id/search_mod_provider_spinner"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

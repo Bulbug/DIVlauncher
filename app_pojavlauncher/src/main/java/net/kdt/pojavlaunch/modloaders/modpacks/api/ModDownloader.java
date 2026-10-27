@@ -37,16 +37,39 @@ public class ModDownloader {
         this.mUseFileCount = useFileCount;
     }
 
-    public void submitDownload(int fileSize, String relativePath, @Nullable String downloadHash, String... url) {
+    public void submitDownload(int fileSize, String relativePath, @Nullable String downloadHash, String... url) throws IOException {
+        File destination = safeDestination(relativePath);
+        validateHttpsUrls(url);
         if(mUseFileCount) mTotalSize += 1;
-        else mTotalSize += fileSize;
-        mDownloadPool.execute(new DownloadTask(url, new File(mDestinationDirectory, relativePath), downloadHash));
+        else mTotalSize += Math.max(fileSize, 0);
+        mDownloadPool.execute(new DownloadTask(url, destination, downloadHash));
     }
 
-    public void submitDownload(FileInfoProvider infoProvider) {
-        if(!mUseFileCount) throw new RuntimeException("This method can only be used in a file-counting ModDownloader");
+    public void submitDownload(FileInfoProvider infoProvider) throws IOException {
+        if(!mUseFileCount) throw new IOException("This method can only be used in a file-counting ModDownloader");
+        if (infoProvider == null) throw new IOException("Missing download metadata provider.");
         mTotalSize += 1;
         mDownloadPool.execute(new FileInfoQueryTask(infoProvider));
+    }
+
+    private File safeDestination(String relativePath) throws IOException {
+        if (relativePath == null || relativePath.trim().isEmpty()) throw new IOException("The archive contains an empty file path.");
+        File root = mDestinationDirectory.getCanonicalFile();
+        File target = new File(root, relativePath).getCanonicalFile();
+        String rootPath = root.getPath();
+        if (!target.getPath().startsWith(rootPath + File.separator)) {
+            throw new IOException("The archive contains an unsafe path: " + relativePath);
+        }
+        return target;
+    }
+
+    private static void validateHttpsUrls(String[] urls) throws IOException {
+        if (urls == null || urls.length == 0) throw new IOException("The archive contains no download URL.");
+        for (String value : urls) {
+            if (value == null || !value.startsWith("https://")) {
+                throw new IOException("A modpack download URL is not a secure HTTPS URL.");
+            }
+        }
     }
 
     public void awaitFinish(Tools.DownloaderFeedback feedback) throws IOException {
@@ -95,8 +118,9 @@ public class ModDownloader {
             try {
                 FileInfo fileInfo = mFileInfoProvider.getFileInfo();
                 if(fileInfo == null) return;
-                new DownloadTask(new String[]{fileInfo.url},
-                        new File(mDestinationDirectory, fileInfo.relativePath), fileInfo.sha1).run();
+                File destination = safeDestination(fileInfo.relativePath);
+                validateHttpsUrls(new String[]{fileInfo.url});
+                new DownloadTask(new String[]{fileInfo.url}, destination, fileInfo.sha1).run();
             }catch (IOException e) {
                 downloadFailed(e);
             }
@@ -135,6 +159,9 @@ public class ModDownloader {
         }
 
         private IOException tryDownload(String sourceUrl) throws InterruptedException {
+            if (sourceUrl == null || !sourceUrl.startsWith("https://")) {
+                return new IOException("A modpack download URL is not a secure HTTPS URL.");
+            }
             IOException exception = null;
             for (int i = 0; i < 5; i++) {
                 try {

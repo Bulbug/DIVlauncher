@@ -183,11 +183,25 @@ public class mcAccountSpinner extends AppCompatSpinner {
      */
     @Override
     public boolean performClick() {
-        if (!(getAdapter() instanceof ListAdapter)) return super.performClick();
+        // When there are no saved accounts, the collapsed spinner itself displays
+        // "Add account". Treat tapping that visible row as the action directly;
+        // otherwise the user has to open a popup containing only the same row.
+        if (mAccountList.size() <= 1) {
+            openAddAccountScreen();
+            return true;
+        }
 
+        // Do not depend on AppCompatSpinner's internal adapter wrapper implementing
+        // ListAdapter. Some AppCompat versions wrap SpinnerAdapter differently, which
+        // caused the old code to fall back to Spinner's selection-only callback. That
+        // callback does not fire when the already-selected Add account row is tapped.
         final ListPopupWindow popup = new ListPopupWindow(getContext());
         popup.setAnchorView(this);
-        popup.setAdapter((ListAdapter) getAdapter());
+        String[] accountArray = mAccountList.toArray(new String[0]);
+        AccountAdapter popupAdapter = new AccountAdapter(
+                getContext(), R.layout.item_minecraft_account, accountArray);
+        popupAdapter.setDropDownViewResource(R.layout.item_minecraft_account);
+        popup.setAdapter(popupAdapter);
         popup.setModal(true);
         float densityScale = getResources().getDisplayMetrics().density;
         int maxPopupWidth = (int) (380f * densityScale);
@@ -203,10 +217,14 @@ public class mcAccountSpinner extends AppCompatSpinner {
         return true;
     }
 
+    private void openAddAccountScreen() {
+        ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+    }
+
     private void handleAccountRowClick(int position) {
         if (position == 0) {
             // The action row is never allowed to become the active profile.
-            ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+            openAddAccountScreen();
             return;
         }
         if (position < 0 || position >= mAccountList.size()) return;

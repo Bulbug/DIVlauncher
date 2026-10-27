@@ -10,8 +10,13 @@ public class ModItem extends ModSource {
     public String imageUrl;
 
     public ModItem(int apiSource, boolean isModpack, String id, String title, String description, String imageUrl) {
+        this(apiSource, isModpack ? "modpack" : "mod", id, title, description, imageUrl);
+    }
+
+    public ModItem(int apiSource, String projectType, String id, String title, String description, String imageUrl) {
         this.apiSource = apiSource;
-        this.isModpack = isModpack;
+        this.projectType = projectType == null ? "mod" : projectType;
+        this.isModpack = "modpack".equals(this.projectType);
         this.id = id;
         this.title = title;
         this.description = description;
@@ -24,14 +29,12 @@ public class ModItem extends ModSource {
         return "ModItem{" +
                 "id='" + id + '\'' +
                 ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", imageUrl='" + imageUrl + '\'' +
+                ", projectType='" + projectType + '\'' +
                 ", apiSource=" + apiSource +
-                ", isModpack=" + isModpack +
                 '}';
     }
 
     public String getIconCacheTag() {
-        return apiSource+"_"+id;
+        return apiSource + "_" + id;
     }
 }

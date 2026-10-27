@@ -65,6 +65,50 @@
 
             />
 
+        <LinearLayout
+            android:id="@+id/mod_browser_controls_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="@dimen/padding_small"
+            app:layout_constraintTop_toBottomOf="@id/search_mod_edittext">
+
+            <Spinner
+                android:id="@+id/mod_browser_type_spinner"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="@string/mod_browser_type_label" />
+
+            <Spinner
+                android:id="@+id/mod_browser_instance_spinner"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.35"
+                android:layout_marginStart="@dimen/padding_small"
+                android:contentDescription="@string/mod_browser_instance_label" />
+
+            <com.kdt.mcgui.MineButton
+                android:id="@+id/mod_browser_installed_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/padding_small"
+                android:minHeight="@dimen/_30sdp"
+                android:text="@string/mod_browser_installed_button" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/mod_browser_provider_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/padding_small"
+            android:text="@string/curseforge_unavailable_notice"
+            android:textSize="@dimen/_10ssp"
+            android:textColor="@color/secondary_text"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/mod_browser_controls_row" />
+
         <ProgressBar
             android:id="@+id/search_mod_progressbar"
             style="?android:attr/progressBarStyleHorizontal"
@@ -72,7 +116,7 @@
             android:layout_height="wrap_content"
             android:indeterminate="true"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@+id/search_mod_edittext"
+            app:layout_constraintTop_toBottomOf="@id/mod_browser_provider_notice"
             tools:layout_editor_absoluteX="13dp" />
 
 

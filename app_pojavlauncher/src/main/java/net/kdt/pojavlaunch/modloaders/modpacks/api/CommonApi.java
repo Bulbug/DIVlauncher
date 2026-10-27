@@ -11,6 +11,7 @@ import net.kdt.pojavlaunch.modloaders.modpacks.models.ModItem;
 import net.kdt.pojavlaunch.modloaders.modpacks.models.SearchFilters;
 import net.kdt.pojavlaunch.modloaders.modpacks.models.SearchResult;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,9 +27,12 @@ public class CommonApi implements ModpackApi {
     private final ModpackApi mModrinthApi;
     private final ModpackApi[] mModpackApis;
 
-    public CommonApi(String curseforgeApiKey) {
-        mCurseforgeApi = new CurseforgeApi(curseforgeApiKey);
+    public CommonApi(String curseforgeProxyBaseUrl) {
         mModrinthApi = new ModrinthApi();
+        boolean proxyAvailable = curseforgeProxyBaseUrl != null && curseforgeProxyBaseUrl.trim().startsWith("https://")
+                && curseforgeProxyBaseUrl.trim().replaceAll("/+$", "").endsWith("/v1");
+        mCurseforgeApi = proxyAvailable ? new CurseforgeApi(curseforgeProxyBaseUrl.trim()) : null;
+        // Keep fixed source indexes for persistence and adapter metadata, but skip CurseForge when no secure proxy is configured.
         mModpackApis = new ModpackApi[]{mModrinthApi, mCurseforgeApi};
     }
 
@@ -43,6 +47,7 @@ public class CommonApi implements ModpackApi {
 
         Future<?>[] futures = new Future<?>[mModpackApis.length];
         for(int i = 0; i < mModpackApis.length; i++) {
+            if (mModpackApis[i] == null || !providerAllowed(searchFilters, i)) continue;
             // If there is an array and its length is zero, this means that we've exhausted the results for this
             // search query and we don't need to actually do the search
             if(results[i] != null && results[i].results.length == 0) continue;
@@ -112,11 +117,25 @@ public class CommonApi implements ModpackApi {
         return getModpackApi(modDetail.apiSource).installMod(modDetail, selectedVersion);
     }
 
+    @Override
+    public void installProject(ModDetail modDetail, int selectedVersion, File targetGameDirectory) throws IOException {
+        getModpackApi(modDetail.apiSource).installProject(modDetail, selectedVersion, targetGameDirectory);
+    }
+
+
+    private static boolean providerAllowed(SearchFilters filters, int sourceIndex) {
+        String provider = filters == null ? "both" : filters.provider;
+        if ("modrinth".equals(provider)) return sourceIndex == Constants.SOURCE_MODRINTH;
+        if ("curseforge".equals(provider)) return sourceIndex == Constants.SOURCE_CURSEFORGE;
+        return true;
+    }
+
     private @NonNull ModpackApi getModpackApi(int apiSource) {
         switch (apiSource) {
             case Constants.SOURCE_MODRINTH:
                 return mModrinthApi;
             case Constants.SOURCE_CURSEFORGE:
+                if (mCurseforgeApi == null) throw new UnsupportedOperationException("CurseForge is disabled until the server-side API proxy is configured.");
                 return mCurseforgeApi;
             default:
                 throw new UnsupportedOperationException("Unknown API source: " + apiSource);

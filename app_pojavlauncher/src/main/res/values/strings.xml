@@ -316,7 +316,31 @@
     <string name="create_profile_optifine">Create OptiFine profile</string>
 
 
-    <string name="hint_search_modpack">Search for modpacks</string>
+    <string name="hint_search_modpack">Search projects</string>
+    <string name="mod_browser_type_label">Content type</string>
+    <string name="mod_browser_instance_label">Target instance</string>
+    <string name="mod_browser_installed_button">Installed</string>
+    <string name="curseforge_unavailable_notice">CurseForge is disabled until an HTTPS server-side API proxy is configured. Modrinth is available now.</string>
+    <string name="mod_browser_choose_instance">Choose an instance first.</string>
+    <string name="mod_browser_no_instances">No launcher instances are available.</string>
+    <string name="mod_browser_no_installed_content">No mods, resource packs, or shaders found in this instance.</string>
+    <string name="mod_browser_enable">Enable</string>
+    <string name="mod_browser_disable">Disable</string>
+    <string name="mod_browser_update">Update</string>
+    <string name="mod_browser_remove">Remove</string>
+    <string name="mod_browser_confirm_remove">Remove this file from the selected instance?</string>
+    <string name="mod_browser_unmanaged">Local file (not installed by the browser)</string>
+    <string name="mod_browser_type_mods">Mods</string>
+    <string name="mod_browser_type_modpacks">Modpacks</string>
+    <string name="mod_browser_type_resourcepacks">Resource packs</string>
+    <string name="mod_browser_type_shaders">Shaders</string>
+    <string name="mod_browser_provider_label">Download source</string>
+    <string name="mod_browser_loader_label">Mod loader</string>
+    <string name="mod_browser_loader_any">Any / not selected</string>
+    <string name="mod_browser_loader_fabric">Fabric</string>
+    <string name="mod_browser_loader_forge">Forge</string>
+    <string name="mod_browser_loader_quilt">Quilt</string>
+    <string name="mod_browser_loader_neoforge">NeoForge</string>
 
     <string name="preference_vulkan_driver_system_title">Use system Vulkan driver</string>
     <string name="preference_vulkan_driver_system_description">Force the launcher to use the system Vulkan driver instead of Turnip on Adreno GPUs. Only affects Zink and mods that use Vulkan.</string>

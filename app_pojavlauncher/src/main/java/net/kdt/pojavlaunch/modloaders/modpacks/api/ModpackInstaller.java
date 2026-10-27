@@ -19,7 +19,15 @@ import java.util.concurrent.Callable;
 public class ModpackInstaller {
 
     public static ModLoader installModpack(ModDetail modDetail, int selectedVersion, InstallFunction installFunction) throws IOException {
+        if (modDetail == null || modDetail.versionUrls == null || modDetail.versionHashes == null
+                || selectedVersion < 0 || selectedVersion >= modDetail.versionUrls.length
+                || selectedVersion >= modDetail.versionHashes.length) {
+            throw new IOException("No valid modpack version was selected.");
+        }
         String versionUrl = modDetail.versionUrls[selectedVersion];
+        if (versionUrl == null || !versionUrl.startsWith("https://")) {
+            throw new IOException("The modpack provider did not return a secure HTTPS download URL.");
+        }
         String versionHash = modDetail.versionHashes[selectedVersion];
         String modpackName = (modDetail.title.toLowerCase(Locale.ROOT) + " " + modDetail.versionNames[selectedVersion])
                 .trim().replaceAll("[\\\\/:*?\"<>| \\t\\n]", "_" );
@@ -30,7 +38,17 @@ public class ModpackInstaller {
             modpackName = modpackName.substring(0,255);
         }
 
-        // Build a new minecraft instance, folder first
+        // Build a new isolated Minecraft instance directory. Never overwrite an existing instance.
+        String instanceFolderName = modpackName;
+        File instanceDestination = new File(Tools.DIR_GAME_HOME, "custom_instances/" + instanceFolderName);
+        int suffix = 2;
+        while (instanceDestination.exists()) {
+            String suffixText = "_" + suffix++;
+            int maxBase = Math.max(1, 240 - suffixText.length());
+            String base = modpackName.length() > maxBase ? modpackName.substring(0, maxBase) : modpackName;
+            instanceFolderName = base + suffixText;
+            instanceDestination = new File(Tools.DIR_GAME_HOME, "custom_instances/" + instanceFolderName);
+        }
 
         // Get the modpack file
         File modpackFile = new File(Tools.DIR_CACHE, modpackName + ".cf"); // Cache File
@@ -45,7 +63,7 @@ public class ModpackInstaller {
             });
 
             // Install the modpack
-            modLoaderInfo = installFunction.installModpack(modpackFile, new File(Tools.DIR_GAME_HOME, "custom_instances/"+modpackName));
+            modLoaderInfo = installFunction.installModpack(modpackFile, instanceDestination);
 
         } finally {
             modpackFile.delete();
@@ -56,14 +74,15 @@ public class ModpackInstaller {
         }
 
         // Create the instance
+        if (LauncherProfiles.mainProfileJson == null) LauncherProfiles.load();
         MinecraftProfile profile = new MinecraftProfile();
-        profile.gameDir = "./custom_instances/" + modpackName;
+        profile.gameDir = "./custom_instances/" + instanceFolderName;
         profile.name = modDetail.title;
         profile.lastVersionId = modLoaderInfo.getVersionId();
         profile.icon = ModIconCache.getBase64Image(modDetail.getIconCacheTag());
 
 
-        LauncherProfiles.mainProfileJson.profiles.put(modpackName, profile);
+        LauncherProfiles.insertMinecraftProfile(profile);
         LauncherProfiles.write();
 
         return modLoaderInfo;

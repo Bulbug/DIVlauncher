@@ -26,13 +26,17 @@ public class ApiHandler {
 
     public ApiHandler(String url) {
         baseUrl = url;
-        additionalHeaders = null;
+        additionalHeaders = new ArrayMap<>();
+        additionalHeaders.put("Accept", "application/json");
+        additionalHeaders.put("User-Agent", "DIVlauncher/1.0 (Android launcher)");
     }
 
     public ApiHandler(String url, String apiKey) {
         baseUrl = url;
         additionalHeaders = new ArrayMap<>();
-        additionalHeaders.put("x-api-key", apiKey);
+        additionalHeaders.put("Accept", "application/json");
+        additionalHeaders.put("User-Agent", "DIVlauncher/1.0 (Android launcher)");
+        if (apiKey != null && !apiKey.trim().isEmpty()) additionalHeaders.put("x-api-key", apiKey);
     }
 
     public <T> T get(String endpoint, Class<T> tClass) {
@@ -57,20 +61,36 @@ public class ApiHandler {
     }
 
     public static String getRaw(Map<String, String> headers, String url) {
-        Log.d("ApiHandler", url);
+        HttpURLConnection conn = null;
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(30000);
             addHeaders(conn, headers);
-            InputStream inputStream = conn.getInputStream();
-            String data = Tools.read(inputStream);
-            Log.d(ApiHandler.class.toString(), data);
-            inputStream.close();
-            conn.disconnect();
+            int status = conn.getResponseCode();
+            InputStream inputStream = status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream();
+            if (inputStream == null) return null;
+            String data;
+            try (InputStream stream = inputStream) { data = Tools.read(stream); }
+            if (status < 200 || status >= 300) {
+                Log.w("ApiHandler", "API request failed with HTTP " + status + " for " + safeEndpoint(url));
+                return null;
+            }
             return data;
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.w("ApiHandler", "API request failed for " + safeEndpoint(url) + ": " + e.getClass().getSimpleName());
+        } finally {
+            if (conn != null) conn.disconnect();
         }
         return null;
+    }
+
+
+    private static String safeEndpoint(String rawUrl) {
+        try {
+            URL url = new URL(rawUrl);
+            return url.getProtocol() + "://" + url.getHost() + url.getPath();
+        } catch (Exception ignored) { return "API endpoint"; }
     }
 
     public static String postRaw(String url, String body) {
