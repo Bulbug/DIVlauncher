@@ -486,22 +486,10 @@ public class LauncherActivity extends BaseActivity {
     private void updateNavSelection(Fragment f) {
         // Only top-level screens count, nested fragments (e.g. inside settings) are ignored
         if(f.getId() != R.id.container_fragment) return;
-        setNavItemSelected(mNavHome, f instanceof MainMenuFragment);
-        setNavItemSelected(mNavProfiles, f instanceof ProfilesFragment || f instanceof ProfileTypeSelectFragment || f instanceof ProfileEditorFragment);
-        setNavItemSelected(mNavMods, f instanceof SearchModFragment || f instanceof ModVersionListFragment);
-        setNavItemSelected(mNavSettings, f instanceof SettingsFragment);
-    }
-
-    /** Apply selection to the rail item and its icon/label so the accent state is visible. */
-    private void setNavItemSelected(View item, boolean selected) {
-        if(item == null) return;
-        item.setSelected(selected);
-        if(item instanceof android.view.ViewGroup) {
-            android.view.ViewGroup group = (android.view.ViewGroup) item;
-            for(int i = 0; i < group.getChildCount(); i++) {
-                group.getChildAt(i).setSelected(selected);
-            }
-        }
+        mNavHome.setSelected(f instanceof MainMenuFragment);
+        mNavProfiles.setSelected(f instanceof ProfilesFragment || f instanceof ProfileTypeSelectFragment || f instanceof ProfileEditorFragment);
+        mNavMods.setSelected(f instanceof SearchModFragment || f instanceof ModVersionListFragment);
+        mNavSettings.setSelected(f instanceof SettingsFragment);
     }
 
     /** Opens a top-level screen from the navigation rail, without stacking screens on top of each other */

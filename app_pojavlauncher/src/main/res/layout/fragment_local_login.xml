@@ -40,7 +40,6 @@
             android:layout_width="match_parent"
             android:layout_height="42dp"
             android:layout_marginTop="8dp"
-            android:onClick="loginMC"
             android:text="@string/login_online_login_label" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

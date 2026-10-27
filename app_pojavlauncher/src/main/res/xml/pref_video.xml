@@ -3,6 +3,16 @@
     xmlns:app2="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory android:title="@string/preference_category_video" >
+        <Preference
+            android:key="fps_optimization"
+            android:title="@string/fps_optimization_title"
+            android:summary="@string/fps_optimization_summary"
+            android:icon="@drawable/ic_setting_video" />
+        <Preference
+            android:key="fps_optimization_restore"
+            android:title="@string/fps_optimization_restore_title"
+            android:summary="@string/fps_optimization_restore_summary"
+            android:icon="@drawable/ic_menu_settings" />
         <androidx.preference.ListPreference
             android:title="@string/mcl_setting_category_renderer"
             android:key="renderer"
