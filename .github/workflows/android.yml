@@ -45,11 +45,17 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Get LTW
+      # Pinned to one LTW release and verified by checksum, so a changed or tampered "latest" can never
+      # silently end up in the APK. To upgrade: change both values below together.
+      - name: Get LTW (pinned)
+        env:
+          LTW_TAG: "7703f1c"
+          LTW_SHA256: "5640b2aecd99a3ad174bfbd959c4bf30bf1f57139f7ba9b5d62cb621ff55322a"
         run: |
           mkdir -p app_pojavlauncher/libs
           curl -fL --retry 5 -o app_pojavlauncher/libs/ltw-release.aar \
-            https://github.com/PojavLauncherTeam/LTW/releases/latest/download/ltw-release.aar
+            "https://github.com/PojavLauncherTeam/LTW/releases/download/${LTW_TAG}/ltw-release.aar"
+          echo "${LTW_SHA256}  app_pojavlauncher/libs/ltw-release.aar" | sha256sum -c -
 
       # Java 8, 17 and 21 for this CPU architecture, repacked into the layout the app unpacks on first start
       - name: Cache Java runtimes
@@ -87,7 +93,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.11"
+          gradle-version: "8.13"  # keep equal to gradle/wrapper/gradle-wrapper.properties
 
       - name: Build JRE JAR files
         run: |
@@ -102,7 +108,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Release signing: add the four DIV_* secrets (see README). Without them, a debug-signed APK is built.
+      # The launcher's own native bridge (pojavexec, exithook, linkerhook, pojavexec_awt, awt_xawt) is
+      # compiled here with ndkBuild; only third-party libs (LWJGL, OpenAL, gl4es, ...) are prebuilt.
+      # Install the exact versions build.gradle asks for (a no-op if the runner already has them).
+      - name: Install Android NDK and SDK pieces
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          echo y | "$SDKMANAGER" --install "ndk;25.2.9519653" "build-tools;34.0.0" "platforms;android-34" > /dev/null
+          ls "$ANDROID_HOME/ndk"
+
+      # Release signing: add the four DIV_* secrets (see README). Without them, the release APK is signed with the shared test key.
       - name: Check for release signing key
         id: signing
         env:
@@ -113,7 +128,7 @@ jobs:
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No DIV_KEYSTORE_BASE64 secret found, building a debug-signed APK."
+            echo "::notice::No DIV_KEYSTORE_BASE64 secret found, using the shared test key."
           fi
 
       - name: Build release APK (signed)
@@ -133,13 +148,16 @@ jobs:
           rm -f "$RUNNER_TEMP/divlauncher-release.jks"
           ls -lh out
 
-      - name: Build debug APK
+      # Without the DIV_* secrets the release APK is signed with the shared test key (it still installs and is
+      # still the normal "DIVlauncher" app, not a debug build). Add the secrets before a public release.
+      - name: Build release APK (shared test key)
         if: steps.signing.outputs.release != 'true'
         run: |
-          gradle :app_pojavlauncher:assembleDebug -PdivAbi=${{ matrix.abi }}
-          APK="out/DIVlauncher-${{ matrix.abi }}-debug.apk"
-          mv app_pojavlauncher/build/outputs/apk/debug/app_pojavlauncher-debug.apk "$APK"
+          gradle :app_pojavlauncher:assembleRelease -PdivAbi=${{ matrix.abi }}
+          APK="out/DIVlauncher-${{ matrix.abi }}-release.apk"
+          mv app_pojavlauncher/build/outputs/apk/release/app_pojavlauncher-release.apk "$APK"
           (cd out && sha256sum "$(basename "$APK")" > "$(basename "$APK" .apk).sha256")
+          echo "::warning::Signed with the shared test key. Add the DIV_* secrets (see README) for a real release key."
           ls -lh out
 
       - name: Upload APK
@@ -176,7 +194,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "DIVlauncher nightly (${GITHUB_SHA::7})" \
-            --notes "Automatic build of commit ${GITHUB_SHA::7}. Files ending in -release are signed with the project key, -debug files are test builds. Most phones need the arm64-v8a file."
+            --notes "Automatic build of commit ${GITHUB_SHA::7}. Most phones need the arm64-v8a file."
 
       - name: Publish tagged release
         if: ${{ github.ref_type == 'tag' }}

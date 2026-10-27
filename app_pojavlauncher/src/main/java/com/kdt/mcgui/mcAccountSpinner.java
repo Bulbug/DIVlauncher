@@ -73,6 +73,9 @@ public class mcAccountSpinner extends AppCompatSpinner {
     private MinecraftAccount mSelectecAccount = null;
     private final Set<String> mElyByRefreshInProgress = Collections.synchronizedSet(new HashSet<>());
 
+    /* The account popup currently on screen, if any, so it can be closed after delete/detach */
+    private ListPopupWindow mAccountPopup;
+
     /* Display the head of the current profile, here just to allow bitmap recycling */
     private BitmapDrawable mHeadDrawable;
 
@@ -202,7 +205,10 @@ public class mcAccountSpinner extends AppCompatSpinner {
         // ListAdapter. Some AppCompat versions wrap SpinnerAdapter differently, which
         // caused the old code to fall back to Spinner's selection-only callback. That
         // callback does not fire when the already-selected Add account row is tapped.
+        dismissAccountPopup();
         final ListPopupWindow popup = new ListPopupWindow(getContext());
+        mAccountPopup = popup;
+        popup.setOnDismissListener(() -> { if (mAccountPopup == popup) mAccountPopup = null; });
         popup.setAnchorView(this);
         String[] accountArray = mAccountList.toArray(new String[0]);
         AccountAdapter popupAdapter = new AccountAdapter(
@@ -222,6 +228,20 @@ public class mcAccountSpinner extends AppCompatSpinner {
         });
         popup.show();
         return true;
+    }
+
+    private void dismissAccountPopup() {
+        if (mAccountPopup != null) {
+            mAccountPopup.dismiss();
+            mAccountPopup = null;
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        // Avoid a leaked popup window if the launcher screen is torn down while it is open
+        dismissAccountPopup();
+        super.onDetachedFromWindow();
     }
 
     private void openAddAccountScreen() {
@@ -398,7 +418,10 @@ public class mcAccountSpinner extends AppCompatSpinner {
             // WORKAROUND
             // Account file corrupted due to previous versions having improper encoding
             if (selectedAccount == null){
-                removeCurrentAccount();
+                // Remove the account that was actually tapped. removeCurrentAccount() would use
+                // getSelectedItemPosition(), which is still the PREVIOUS selection here (the popup
+                // flow calls pickAccount() before setSelection()) and would delete a healthy account.
+                removeAccount(position);
                 pickAccount(-1);
                 setSelection(0);
                 return;
@@ -535,6 +558,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
 
                 deleteButton.setVisibility(View.VISIBLE);
                 deleteButton.setOnClickListener(v -> {
+                    dismissAccountPopup();
                     showDeleteDialog(getContext(), position);
                 });
             }
@@ -556,7 +580,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
                     .setMessage(R.string.warning_remove_account)
                     .setPositiveButton(android.R.string.cancel, null)
                     .setNeutralButton(R.string.global_delete, (dialog, which) -> {
-                        onDetachedFromWindow();
+                        dismissAccountPopup();
                         removeAccount(position);
                     })
                     .show();

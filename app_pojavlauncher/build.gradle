@@ -12,61 +12,21 @@ static def getDateSeconds() {
     }
 }
 
+// App version shown in Android's app info. Our own scheme (no upstream codenames, no git calls):
+//   tag build   (git tag v1.2.0)  -> 1.2.0
+//   CI nightly  (default branch)  -> <divVersion>-nightly.<7-char commit>
+//   local build                   -> <divVersion>-local
+// <divVersion> is set in gradle.properties.
 def getVersionName = {
-    // Get the last version tag, as well as the short head of the last commit
-    ByteArrayOutputStream TAG = new ByteArrayOutputStream()
-    ByteArrayOutputStream BRANCH = new ByteArrayOutputStream()
-    // Used by the fallback for github actions
-    ByteArrayOutputStream TAG_PART_COMMIT = new ByteArrayOutputStream()
-    String TAG_STRING
-
-    exec {
-        try {
-            commandLine 'git', 'describe', '--tags'
-            ignoreExitValue true
-            standardOutput = TAG
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    String base = project.hasProperty('divVersion') ? project.property('divVersion').toString().trim() : '1.0.0'
+    String refType = System.getenv("GITHUB_REF_TYPE")
+    String refName = System.getenv("GITHUB_REF_NAME")
+    String sha = System.getenv("GITHUB_SHA")
+    if (refType == "tag" && refName != null && !refName.trim().isEmpty()) {
+        return refName.trim().replaceFirst(/^[vV]/, '')
     }
-
-    if (TAG.toString() == "") {
-        exec {
-            // Fallback for action builds
-            try {
-                commandLine 'git', 'describe', '--always', '--tags'
-                ignoreExitValue true
-                standardOutput = TAG_PART_COMMIT
-            } catch (Exception e) {
-            }
-        }
-    }
-
-
-    if(TAG.toString() != ""){
-        TAG_STRING = TAG.toString()
-    }else {
-        if(TAG_PART_COMMIT.toString().trim() == ""){
-             //Fallback no repo
-            return ("LOCAL-" + "${getDate()}")
-        }else {
-            // Used by github actions
-            TAG_STRING =  'gladiolus-' + "${getDate()}" + "-" + TAG_PART_COMMIT.toString().trim()
-        }
-
-    }
-
-    exec {
-        try {
-            commandLine 'git', 'branch', '--show-current'
-            ignoreExitValue true
-            standardOutput = BRANCH
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    return TAG_STRING.trim().replace("-g", "-") + "-" + BRANCH.toString().trim()
+    if (sha != null && sha.length() >= 7) return base + '-nightly.' + sha.substring(0, 7)
+    return base + '-local'
 }
 
 def getElyByOAuthConfig = { String envName, String propertyName ->
@@ -81,6 +41,23 @@ def escapeBuildConfigString = { String value ->
 
 def elyByOAuthClientId = getElyByOAuthConfig('ELYBY_OAUTH_CLIENT_ID', 'elybyOAuthClientId')
 def elyByOAuthClientSecret = getElyByOAuthConfig('ELYBY_OAUTH_CLIENT_SECRET', 'elybyOAuthClientSecret')
+
+// SECURITY: anything compiled into an APK can be extracted by whoever downloads it. The Ely.by client
+// secret is therefore allowed in debug/private builds only. A release/bundle build that would embed it
+// is refused unless the maintainer opts in with -PelybyAllowSecretInRelease=true. The proper fix for
+// public releases is a small backend that exchanges the OAuth code and keeps the secret server-side.
+def elyByAllowSecretInRelease = project.hasProperty('elybyAllowSecretInRelease') &&
+        project.property('elybyAllowSecretInRelease').toString() == 'true'
+gradle.taskGraph.whenReady { graph ->
+    boolean buildsRelease = graph.allTasks.any { task ->
+        task.name ==~ /(?i)(assemble|bundle|package)\w*release\w*/
+    }
+    if (buildsRelease && !elyByOAuthClientSecret.isEmpty() && !elyByAllowSecretInRelease) {
+        throw new GradleException('Refusing to build a release APK that embeds ELYBY_OAUTH_CLIENT_SECRET: ' +
+                'the secret could be extracted from the APK. Unset it for release builds, or pass ' +
+                '-PelybyAllowSecretInRelease=true if you accept that risk.')
+    }
+}
 
 def getCFProxyBaseUrl = {
     // Public proxy URL only; NEVER package the private CurseForge API key in the APK.
@@ -110,6 +87,7 @@ android {
 
     lintOptions {
         abortOnError false
+        checkReleaseBuilds false
     }
 
     signingConfigs {
@@ -177,7 +155,14 @@ android {
             // Don't set to true or java.awt will be a.a or something similar.
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (System.getenv("DIV_KEYSTORE_FILE")) signingConfig signingConfigs.release
+            if (System.getenv("DIV_KEYSTORE_FILE")) {
+                signingConfig signingConfigs.release
+            } else {
+                // No release key configured: sign with the shared test key so the APK still installs.
+                // Fine for testing; set the DIV_* secrets (see README) before a public release.
+                signingConfig signingConfigs.customDebug
+                logger.warn('BUILD: DIV_KEYSTORE_FILE not set, signing the release APK with the shared test key.')
+            }
             // defaultConfig already set
             // multiDexEnabled = true
             // debuggable = true
@@ -223,6 +208,7 @@ android {
 afterEvaluate {
     // Explicit dependencies for which the apk relies on
     tasks.mergeDebugAssets.dependsOn(":forge_installer:jar", ":arc_dns_injector:jar", ":jre_lwjgl3glfw:jar")
+    tasks.mergeReleaseAssets.dependsOn(":forge_installer:jar", ":arc_dns_injector:jar", ":jre_lwjgl3glfw:jar")
 }
 
 dependencies {

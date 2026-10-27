@@ -22,6 +22,8 @@ export ELYBY_OAUTH_CLIENT_SECRET='your-real-client-secret'
 
 The client secret is compiled into the APK by this private-build implementation and can be extracted from a distributed APK. **Do not use this approach for a public release**: a public launcher should exchange OAuth codes through a backend that keeps the client secret server-side. This repository does not contain registered Ely.by credentials or such a backend, so browser sign-in will show a setup message until credentials are supplied.
 
+**Build guard:** `app_pojavlauncher/build.gradle` now refuses to build a release/bundle variant while `ELYBY_OAUTH_CLIENT_SECRET` is set, so the secret cannot ship in a release APK by accident. Debug builds are unaffected. Override only knowingly with `-PelybyAllowSecretInRelease=true`.
+
 ## Build status
 
 The source was updated, but an APK could not be compiled in the current environment: Gradle Wrapper tried to download `https://services.gradle.org/distributions/gradle-8.13-bin.zip` and failed with `UnknownHostException`. The source update has therefore not been verified by an Android build or real Ely.by sign-in.
