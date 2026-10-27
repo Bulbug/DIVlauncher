@@ -170,10 +170,8 @@ public class mcAccountSpinner extends AppCompatSpinner {
         mLoginBarPaint.setStrokeWidth(getResources().getDimensionPixelOffset(R.dimen._2sdp));
 
         // Set behavior
-        // Register the action on the View click listener as well as performClick().
-        // Calling super.performClick() for the single-row state dispatches this listener
-        // through Android's standard click path instead of relying on custom popup logic.
-        setOnClickListener(v -> openAddAccountScreen());
+        // AdapterView (including Spinner) forbids setOnClickListener and throws during
+        // XML inflation. Route taps through performClick() below instead.
         reloadAccounts(true, 0);
 
         ExtraCore.addExtraListener(ExtraConstants.MOJANG_LOGIN_TODO, mMojangLoginListener);
@@ -194,9 +192,9 @@ public class mcAccountSpinner extends AppCompatSpinner {
         // "Add account". Treat tapping that visible row as the action directly;
         // otherwise the user has to open a popup containing only the same row.
         if (mAccountList.size() <= 1) {
-            // Invoke the registered View click listener directly. Calling the Spinner
-            // superclass here would open its native popup instead of running the action.
-            callOnClick();
+            // There is only the Add account action row, so launch the account flow
+            // directly. AdapterView cannot use setOnClickListener/callOnClick here.
+            openAddAccountScreen();
             return true;
         }
 
