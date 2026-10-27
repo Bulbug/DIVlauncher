@@ -9,7 +9,7 @@
     <!-- Navigation rail -->
     <LinearLayout
         android:id="@+id/nav_rail"
-        android:layout_width="60dp"
+        android:layout_width="64dp"
         android:layout_height="0dp"
         android:background="@color/background_status_bar"
         android:orientation="vertical"
@@ -87,7 +87,13 @@
     <com.kdt.mcgui.mcAccountSpinner
         android:id="@+id/account_spinner"
         android:layout_width="0dp"
-        android:layout_height="40dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/account_bar_background"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
         android:dropDownWidth="wrap_content"
         android:dropDownVerticalOffset="40dp"
         android:clickable="true"
