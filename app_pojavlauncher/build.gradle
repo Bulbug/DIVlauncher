@@ -69,6 +69,19 @@ def getVersionName = {
     return TAG_STRING.trim().replace("-g", "-") + "-" + BRANCH.toString().trim()
 }
 
+def getElyByOAuthConfig = { String envName, String propertyName ->
+    String value = System.getenv(envName)
+    if (value == null && project.hasProperty(propertyName)) value = project.property(propertyName).toString()
+    return value == null ? "" : value.trim()
+}
+
+def escapeBuildConfigString = { String value ->
+    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+}
+
+def elyByOAuthClientId = getElyByOAuthConfig('ELYBY_OAUTH_CLIENT_ID', 'elybyOAuthClientId')
+def elyByOAuthClientSecret = getElyByOAuthConfig('ELYBY_OAUTH_CLIENT_SECRET', 'elybyOAuthClientSecret')
+
 def getCFProxyBaseUrl = {
     // Public proxy URL only; NEVER package the private CurseForge API key in the APK.
     String value = System.getenv("CURSEFORGE_PROXY_BASE_URL")
@@ -126,6 +139,10 @@ android {
         versionName getVersionName()
         multiDexEnabled true //important
         resValue 'string', 'curseforge_proxy_base_url', getCFProxyBaseUrl()
+        // Ely.by's OAuth website login is enabled only for builds with a registered app.
+        // Credentials are passed in at build time; never commit them to source control.
+        buildConfigField 'String', 'ELYBY_OAUTH_CLIENT_ID', escapeBuildConfigString(elyByOAuthClientId)
+        buildConfigField 'String', 'ELYBY_OAUTH_CLIENT_SECRET', escapeBuildConfigString(elyByOAuthClientSecret)
 
         // CI builds one APK per CPU architecture: -PdivAbi=arm64-v8a
         if (project.hasProperty('divAbi')) {

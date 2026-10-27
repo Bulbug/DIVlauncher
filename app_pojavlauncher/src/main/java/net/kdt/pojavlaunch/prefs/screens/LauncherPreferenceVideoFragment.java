@@ -1,7 +1,6 @@
 package net.kdt.pojavlaunch.prefs.screens;
 
 import android.content.SharedPreferences;
-import android.app.AlertDialog;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -12,7 +11,6 @@ import androidx.preference.SwitchPreferenceCompat;
 import net.kdt.pojavlaunch.R;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.prefs.CustomSeekBarPreference;
-import net.kdt.pojavlaunch.prefs.FpsOptimization;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 
 /**
@@ -22,7 +20,6 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
     @Override
     public void onCreatePreferences(Bundle b, String str) {
         addPreferencesFromResource(R.xml.pref_video);
-        setupFpsOptimization();
         int resolution = (int) (LauncherPreferences.PREF_SCALE_FACTOR * 100);
 
         //Disable notch checking behavior on android 8.1 and below.
@@ -55,54 +52,6 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
         rendererListPreference.setEntryValues(renderersList.rendererIds.toArray(new String[0]));
 
         computeVisibility();
-    }
-
-    private void setupFpsOptimization() {
-        androidx.preference.Preference optimize = requirePreference("fps_optimization");
-        androidx.preference.Preference restore = requirePreference("fps_optimization_restore");
-        java.io.File gameDirectory = FpsOptimization.currentGameDirectory();
-        restore.setVisible(FpsOptimization.hasBackup(gameDirectory));
-        optimize.setOnPreferenceClickListener(preference -> {
-            FpsOptimization.Recommendation recommendation = FpsOptimization.recommend(requireContext());
-            String preview = getString(R.string.fps_optimization_preview_body,
-                    recommendation.tier, recommendation.renderDistance);
-            new AlertDialog.Builder(requireContext())
-                    .setTitle(R.string.fps_optimization_preview_title)
-                    .setMessage(preview)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(R.string.fps_optimization_apply, (dialog, which) -> {
-                        try {
-                            FpsOptimization.apply(FpsOptimization.currentGameDirectory(), recommendation.renderDistance);
-                            restore.setVisible(true);
-                            android.widget.Toast.makeText(requireContext(), R.string.fps_optimization_applied,
-                                    android.widget.Toast.LENGTH_LONG).show();
-                        } catch (java.io.IOException e) {
-                            android.widget.Toast.makeText(requireContext(),
-                                    getString(R.string.fps_optimization_error, e.getMessage()),
-                                    android.widget.Toast.LENGTH_LONG).show();
-                        }
-                    }).show();
-            return true;
-        });
-        restore.setOnPreferenceClickListener(preference -> {
-            new AlertDialog.Builder(requireContext())
-                    .setTitle(R.string.fps_optimization_restore_title)
-                    .setMessage(R.string.fps_optimization_restore_confirm)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(R.string.fps_optimization_restore_title, (dialog, which) -> {
-                        try {
-                            FpsOptimization.restore(FpsOptimization.currentGameDirectory());
-                            restore.setVisible(false);
-                            android.widget.Toast.makeText(requireContext(), R.string.fps_optimization_restored,
-                                    android.widget.Toast.LENGTH_SHORT).show();
-                        } catch (java.io.IOException e) {
-                            android.widget.Toast.makeText(requireContext(),
-                                    getString(R.string.fps_optimization_error, e.getMessage()),
-                                    android.widget.Toast.LENGTH_LONG).show();
-                        }
-                    }).show();
-            return true;
-        });
     }
 
     @Override

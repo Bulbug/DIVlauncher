@@ -23,7 +23,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
-/** Stores Ely.by access tokens encrypted by a device-bound Android Keystore key. */
+/** Stores Ely.by session credentials (including OAuth refresh tokens) encrypted by Android Keystore. */
 public final class ElyByTokenStore {
     public static final String SECURE_TOKEN_MARKER = "__ELYBY_TOKEN_IN_ANDROID_KEYSTORE__";
     private static final String KEY_ALIAS = "divlauncher.elyby.access-token.aes";

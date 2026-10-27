@@ -1,7 +1,9 @@
 package com.kdt.mcgui;
 
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -30,6 +32,7 @@ import androidx.appcompat.widget.ListPopupWindow;
 import androidx.core.content.res.ResourcesCompat;
 
 
+import net.kdt.pojavlaunch.LauncherActivity;
 import net.kdt.pojavlaunch.PojavApplication;
 import net.kdt.pojavlaunch.PojavProfile;
 import net.kdt.pojavlaunch.R;
@@ -218,7 +221,18 @@ public class mcAccountSpinner extends AppCompatSpinner {
     }
 
     private void openAddAccountScreen() {
-        ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+        // Prefer a direct activity call for user taps. The old event-only route could
+        // silently do nothing if its listener was not registered/available at that moment.
+        Context context = getContext();
+        while (context instanceof ContextWrapper && !(context instanceof Activity)) {
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        if (context instanceof LauncherActivity) {
+            ((LauncherActivity) context).openAddAccountScreen();
+        } else {
+            // Keep compatibility for any non-standard host context.
+            ExtraCore.setValue(ExtraConstants.SELECT_AUTH_METHOD, true);
+        }
     }
 
     private void handleAccountRowClick(int position) {
@@ -253,7 +267,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
         String accountName = mAccountList.get(position);
         boolean wasActive = accountName.equals(PojavProfile.getCurrentProfileName(getContext()));
         MinecraftAccount removedAccount = MinecraftAccount.load(accountName);
-        if (removedAccount != null && removedAccount.isElyBy() && removedAccount.hasElyBySession()) {
+        if (removedAccount != null && removedAccount.isElyBy() && !removedAccount.isElyByOAuth() && removedAccount.hasElyBySession()) {
             final String accessToken = removedAccount.accessToken;
             final String clientToken = removedAccount.clientToken;
             // A failed network logout must never prevent local removal. Tokens are not logged.

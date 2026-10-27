@@ -25,6 +25,7 @@ public class MinecraftAccount {
     public static final String TYPE_OFFLINE = "offline";
     public static final String TYPE_MICROSOFT = "microsoft";
     public static final String TYPE_ELYBY = "elyby";
+    public static final String TYPE_ELYBY_OAUTH = "elyby_oauth";
     public static final String TYPE_DEMO = "demo";
     private static final String ZERO_UUID = "00000000-0000-0000-0000-000000000000";
 
@@ -41,6 +42,9 @@ public class MinecraftAccount {
     public String msaRefreshToken = "0";
     public String xuid;
     public long expiresAt;
+    /** Ely.by OAuth secrets are loaded from Android Keystore and never written to account JSON. */
+    public transient String elyByOAuthRefreshToken;
+    public transient long elyByOAuthExpiresAt;
     public String skinFaceBase64;
     private Bitmap mFaceCache;
     
@@ -63,7 +67,7 @@ public class MinecraftAccount {
         if (TYPE_OFFLINE.equals(authType)) return true;
         // Provider identity is authoritative. A damaged/missing Ely.by token must never
         // silently turn a premium account into an offline account.
-        if (TYPE_ELYBY.equals(authType) || TYPE_MICROSOFT.equals(authType)
+        if (TYPE_ELYBY.equals(authType) || TYPE_ELYBY_OAUTH.equals(authType) || TYPE_MICROSOFT.equals(authType)
                 || TYPE_DEMO.equals(authType) || isMicrosoft) return false;
         return (accessToken == null || accessToken.equals("0")) && !isDemo();
     }
@@ -73,7 +77,7 @@ public class MinecraftAccount {
         // convention. An offline profile must never inherit --demo just because of a
         // stale/legacy display name; a real demo account is still recognized by its type
         // or by its old untyped Demo.* username.
-        if (TYPE_OFFLINE.equals(authType) || TYPE_MICROSOFT.equals(authType) || TYPE_ELYBY.equals(authType)) {
+        if (TYPE_OFFLINE.equals(authType) || TYPE_MICROSOFT.equals(authType) || TYPE_ELYBY.equals(authType) || TYPE_ELYBY_OAUTH.equals(authType)) {
             return false;
         }
         return TYPE_DEMO.equals(authType) || (username != null && username.startsWith("Demo."));
@@ -81,7 +85,7 @@ public class MinecraftAccount {
 
     public String getAuthType(){
         if (TYPE_OFFLINE.equals(authType) || TYPE_MICROSOFT.equals(authType)
-                || TYPE_ELYBY.equals(authType) || TYPE_DEMO.equals(authType)) return authType;
+                || TYPE_ELYBY.equals(authType) || TYPE_ELYBY_OAUTH.equals(authType) || TYPE_DEMO.equals(authType)) return authType;
         if (isMicrosoft) return TYPE_MICROSOFT;
         if (isDemo()) return TYPE_DEMO;
         if (isLocal()) return TYPE_OFFLINE;
@@ -93,7 +97,11 @@ public class MinecraftAccount {
     }
 
     public boolean isElyBy(){
-        return TYPE_ELYBY.equals(getAuthType());
+        return TYPE_ELYBY.equals(getAuthType()) || TYPE_ELYBY_OAUTH.equals(getAuthType());
+    }
+
+    public boolean isElyByOAuth() {
+        return TYPE_ELYBY_OAUTH.equals(getAuthType());
     }
 
     public boolean hasElyBySession(){
@@ -103,7 +111,7 @@ public class MinecraftAccount {
     }
 
     public String getAuthTypeLabel(){
-        if (isElyBy()) return hasElyBySession() ? "Ely.by · Signed in" : "Ely.by · Re-authenticate";
+        if (isElyBy()) return hasElyBySession() ? (isElyByOAuth() ? "Ely.by · Browser login" : "Ely.by · Signed in") : "Ely.by · Re-authenticate";
         if (isOffline()) return "Offline · Unverified";
         if (isMicrosoft) return "Microsoft · Signed in";
         if (isDemo()) return "Demo";
@@ -128,12 +136,21 @@ public class MinecraftAccount {
         if (isElyBy()) {
             com.google.gson.JsonObject json = new com.google.gson.JsonParser().parse(jsonText).getAsJsonObject();
             if (hasElyBySession()) {
-                if (!ElyByTokenStore.storeToken(username, accessToken)) {
+                String secretPayload = accessToken;
+                if (isElyByOAuth()) {
+                    com.google.gson.JsonObject oauth = new com.google.gson.JsonObject();
+                    oauth.addProperty("accessToken", accessToken);
+                    oauth.addProperty("refreshToken", elyByOAuthRefreshToken == null ? "" : elyByOAuthRefreshToken);
+                    oauth.addProperty("expiresAt", elyByOAuthExpiresAt);
+                    secretPayload = Tools.GLOBAL_GSON.toJson(oauth);
+                }
+                if (!ElyByTokenStore.storeToken(username, secretPayload)) {
                     throw new IOException("Secure Ely.by token storage requires Android 6.0 or newer. The session was not saved.");
                 }
             }
-            // Never write Ely.by access tokens to the account JSON file.
+            // Never write Ely.by access or refresh tokens to the account JSON file.
             json.addProperty("accessToken", ElyByTokenStore.SECURE_TOKEN_MARKER);
+            json.addProperty("msaRefreshToken", "0");
             jsonText = Tools.GLOBAL_GSON.toJson(json);
         }
         Tools.write(outPath, jsonText);
@@ -175,6 +192,18 @@ public class MinecraftAccount {
                 if (secureToken == null || secureToken.isEmpty()) {
                     acc.accessToken = ElyByTokenStore.SECURE_TOKEN_MARKER;
                     acc.requiresReauthentication = true;
+                } else if (acc.isElyByOAuth()) {
+                    try {
+                        com.google.gson.JsonObject oauth = new com.google.gson.JsonParser().parse(secureToken).getAsJsonObject();
+                        acc.accessToken = oauth.get("accessToken").getAsString();
+                        acc.elyByOAuthRefreshToken = oauth.has("refreshToken") ? oauth.get("refreshToken").getAsString() : "";
+                        acc.elyByOAuthExpiresAt = oauth.has("expiresAt") ? oauth.get("expiresAt").getAsLong() : 0L;
+                        acc.requiresReauthentication = acc.accessToken.isEmpty() || acc.elyByOAuthRefreshToken.isEmpty();
+                        if (acc.requiresReauthentication) acc.accessToken = ElyByTokenStore.SECURE_TOKEN_MARKER;
+                    } catch (Exception invalidPayload) {
+                        acc.accessToken = ElyByTokenStore.SECURE_TOKEN_MARKER;
+                        acc.requiresReauthentication = true;
+                    }
                 } else {
                     acc.accessToken = secureToken;
                     acc.requiresReauthentication = false;

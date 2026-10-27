@@ -26,6 +26,7 @@ import com.kdt.mcgui.ProgressLayout;
 import com.kdt.mcgui.mcAccountSpinner;
 
 import net.kdt.pojavlaunch.authenticator.elyby.ElyByAuthClient;
+import net.kdt.pojavlaunch.authenticator.elyby.ElyByOAuthClient;
 import net.kdt.pojavlaunch.authenticator.elyby.ElyByTokenStore;
 import net.kdt.pojavlaunch.value.MinecraftAccount;
 
@@ -99,14 +100,23 @@ public class LauncherActivity extends BaseActivity {
 
     /* Listener for the auth method selection screen */
     private final ExtraListener<Boolean> mSelectAuthMethod = (key, value) -> {
-        Fragment fragment = getSupportFragmentManager().findFragmentById(mFragmentView.getId());
-        // The account spinner is shared by the launcher screens, so Add Account must work
-        // even when the user is currently viewing Profiles, Settings, or another screen.
-        if (fragment instanceof SelectAuthFragment) return false;
-
-        Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
+        openAddAccountScreen();
         return false;
     };
+
+    /** Open the authentication chooser directly from the account control.
+     * This avoids relying solely on the global ExtraCore event for a UI tap.
+     */
+    public void openAddAccountScreen() {
+        if (isFinishing() || isDestroyed() || mFragmentView == null) return;
+        FragmentManager fm = getSupportFragmentManager();
+        // A tap while FragmentManager state is saved should be ignored rather than
+        // enqueueing repeated posts; the user can tap again once the activity resumes.
+        if (fm.isStateSaved()) return;
+        Fragment current = fm.findFragmentById(mFragmentView.getId());
+        if (current instanceof SelectAuthFragment) return;
+        Tools.swapFragment(this, SelectAuthFragment.class, SelectAuthFragment.TAG, null);
+    }
 
     /* Listener for the settings fragment */
     private final View.OnClickListener mSettingButtonListener = v -> {
@@ -142,8 +152,12 @@ public class LauncherActivity extends BaseActivity {
                 final String previousAccountName = selectedAccountForLaunch.username;
                 PojavApplication.sExecutorService.execute(() -> {
                     try {
-                        ElyByAuthClient.validate(selectedAccountForLaunch.accessToken);
-                        ElyByAuthClient.refresh(selectedAccountForLaunch);
+                        if (selectedAccountForLaunch.isElyByOAuth()) {
+                            ElyByOAuthClient.refreshAndValidate(selectedAccountForLaunch);
+                        } else {
+                            ElyByAuthClient.validate(selectedAccountForLaunch.accessToken);
+                            ElyByAuthClient.refresh(selectedAccountForLaunch);
+                        }
                         if (!previousAccountName.equals(selectedAccountForLaunch.username)) {
                             File collidingAccount = new File(Tools.DIR_ACCOUNT_NEW, selectedAccountForLaunch.username + ".json");
                             if (collidingAccount.exists()) {
@@ -486,10 +500,22 @@ public class LauncherActivity extends BaseActivity {
     private void updateNavSelection(Fragment f) {
         // Only top-level screens count, nested fragments (e.g. inside settings) are ignored
         if(f.getId() != R.id.container_fragment) return;
-        mNavHome.setSelected(f instanceof MainMenuFragment);
-        mNavProfiles.setSelected(f instanceof ProfilesFragment || f instanceof ProfileTypeSelectFragment || f instanceof ProfileEditorFragment);
-        mNavMods.setSelected(f instanceof SearchModFragment || f instanceof ModVersionListFragment);
-        mNavSettings.setSelected(f instanceof SettingsFragment);
+        setNavItemSelected(mNavHome, f instanceof MainMenuFragment);
+        setNavItemSelected(mNavProfiles, f instanceof ProfilesFragment || f instanceof ProfileTypeSelectFragment || f instanceof ProfileEditorFragment);
+        setNavItemSelected(mNavMods, f instanceof SearchModFragment || f instanceof ModVersionListFragment);
+        setNavItemSelected(mNavSettings, f instanceof SettingsFragment);
+    }
+
+    /** Apply selection to the rail item and its icon/label so the accent state is visible. */
+    private void setNavItemSelected(View item, boolean selected) {
+        if(item == null) return;
+        item.setSelected(selected);
+        if(item instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) item;
+            for(int i = 0; i < group.getChildCount(); i++) {
+                group.getChildAt(i).setSelected(selected);
+            }
+        }
     }
 
     /** Opens a top-level screen from the navigation rail, without stacking screens on top of each other */
