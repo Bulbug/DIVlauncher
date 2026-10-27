@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Keep debug builds clearly distinguishable; release uses src/main's DIVlauncher label. -->
+    <string name="app_name">DIVlauncher Debug</string>
+</resources>

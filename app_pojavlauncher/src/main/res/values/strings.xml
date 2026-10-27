@@ -477,7 +477,7 @@
     <string name="auth_demo">Demo account</string>
     <string name="auth_hint">Microsoft accounts use the official Minecraft sign-in. Offline accounts are not verified and cannot join authenticated online-mode servers.</string>
     <string name="auth_elyby_title">Sign in with Ely.by</string>
-    <string name="auth_elyby_security_note">You will sign in on Ely.by's official website in your browser. DIVlauncher never asks for or stores your Ely.by password. After you approve access, the launcher saves the session using Android Keystore.</string>
+    <string name="auth_elyby_security_note">Sign in on the official Ely.by website in your browser. DIVlauncher does not ask for or store your Ely.by password. After you approve access, the launcher stores the session with Android Keystore.</string>
     <string name="auth_elyby_username_hint">Ely.by username or email</string>
     <string name="auth_elyby_password_hint">Password</string>
     <string name="auth_elyby_sign_in">Sign in</string>
