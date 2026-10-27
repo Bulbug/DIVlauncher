@@ -25,6 +25,12 @@ public class LauncherPreferenceFragment extends PreferenceFragmentCompat impleme
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         super.onViewCreated(view, savedInstanceState);
+        // Cleaner rows inside the rounded panel: no divider lines, some breathing room
+        setDivider(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        setDividerHeight(0);
+        int pad = Math.round(8 * getResources().getDisplayMetrics().density);
+        getListView().setPadding(pad, pad, pad, pad);
+        getListView().setClipToPadding(false);
     }
 
     @Override

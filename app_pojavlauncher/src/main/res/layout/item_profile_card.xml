@@ -1,81 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
     android:background="@drawable/profile_card_background"
     android:clickable="true"
     android:focusable="true"
-    android:padding="12dp">
+    android:orientation="vertical"
+    android:padding="14dp">
 
-    <ImageView
-        android:id="@+id/profile_icon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:importantForAccessibility="no"
-        android:scaleType="fitCenter"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <ImageButton
-        android:id="@+id/profile_edit"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/profile_edit"
-        android:src="@drawable/ic_edit_profile"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <ImageButton
-        android:id="@+id/profile_download"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/profile_download"
-        android:src="@drawable/ic_download"
-        android:tint="@color/accent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/profile_edit" />
-
-    <TextView
-        android:id="@+id/profile_name"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:ellipsize="end"
-        android:singleLine="true"
-        android:textColor="@color/primary_text"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/profile_icon"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/profile_version"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:singleLine="true"
-        android:textColor="@color/secondary_text"
-        android:textSize="12sp"
-        app:layout_constraintTop_toBottomOf="@id/profile_name"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <ImageView
+            android:id="@+id/profile_icon"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter" />
 
-    <TextView
-        android:id="@+id/profile_tag"
-        android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/profile_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@color/primary_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/profile_version"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/profile_edit"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/profile_edit"
+            android:src="@drawable/ic_edit_profile" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/padding_moderate"
-        android:background="@drawable/tag_background"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="2dp"
-        android:textColor="@color/secondary_text"
-        android:textSize="10sp"
-        app:layout_constraintTop_toBottomOf="@id/profile_version"
-        app:layout_constraintStart_toStartOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/profile_tag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/loader_tag_background"
+            android:paddingStart="9dp"
+            android:paddingEnd="9dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:textColor="@color/accent_on"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/profile_download"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/profile_download"
+            android:src="@drawable/ic_download"
+            android:tint="@color/accent" />
+
+        <Button
+            android:id="@+id/profile_select"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/select_button_background"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textAllCaps="false"
+            android:textColor="@color/select_button_text"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

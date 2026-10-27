@@ -93,6 +93,27 @@ public class mcVersionSpinner extends ExtendedTextView {
         mProfileAdapter.reloadProfiles();
     }
 
+    /** Which profile should be shown: a pending request from the profile editor wins over the saved one */
+    private int resolveWantedProfileIndex() {
+        String extra_value = (String) ExtraCore.consumeValue(ExtraConstants.REFRESH_VERSION_SPINNER);
+        if(extra_value != null){
+            return extra_value.equals(DELETED_PROFILE) ? 0
+                    : getProfileAdapter().resolveProfileIndex(extra_value);
+        }
+        return mProfileAdapter.resolveProfileIndex(
+                LauncherPreferences.DEFAULT_PREF.getString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE,""));
+    }
+
+    /**
+     * Reload the profile list and show the profile that is currently wanted/saved.
+     * The spinner lives in the activity's top bar now and is not recreated when screens change,
+     * so call this after anything that created, edited, deleted or selected a profile elsewhere.
+     */
+    public void syncSelection() {
+        mProfileAdapter.reloadProfiles();
+        setProfileSelection(Math.max(0, resolveWantedProfileIndex()));
+    }
+
     /** Initialize various behaviors */
     private void init(){
         // Setup various attributes
@@ -103,16 +124,7 @@ public class mcVersionSpinner extends ExtendedTextView {
         setPaddingRelative(startPadding, 0, endPadding, 0);
         setCompoundDrawablePadding(startPadding);
 
-        int profileIndex;
-        String extra_value = (String) ExtraCore.consumeValue(ExtraConstants.REFRESH_VERSION_SPINNER);
-        if(extra_value != null){
-            profileIndex = extra_value.equals(DELETED_PROFILE) ? 0
-                    : getProfileAdapter().resolveProfileIndex(extra_value);
-        }else
-            profileIndex = mProfileAdapter.resolveProfileIndex(
-                    LauncherPreferences.DEFAULT_PREF.getString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE,""));
-
-        setProfileSelection(Math.max(0,profileIndex));
+        setProfileSelection(Math.max(0, resolveWantedProfileIndex()));
 
         // Popup window behavior
         setOnClickListener(new OnClickListener() {

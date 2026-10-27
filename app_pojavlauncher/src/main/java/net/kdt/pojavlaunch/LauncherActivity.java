@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -24,6 +25,7 @@ import androidx.fragment.app.FragmentManager;
 
 import com.kdt.mcgui.ProgressLayout;
 import com.kdt.mcgui.mcAccountSpinner;
+import com.kdt.mcgui.mcVersionSpinner;
 
 import net.kdt.pojavlaunch.authenticator.elyby.ElyByAuthClient;
 import net.kdt.pojavlaunch.authenticator.elyby.ElyByOAuthClient;
@@ -76,6 +78,8 @@ public class LauncherActivity extends BaseActivity {
     private mcAccountSpinner mAccountSpinner;
     private FragmentContainerView mFragmentView;
     private ImageButton mSettingsButton;
+    private mcVersionSpinner mVersionSpinner;
+    private TextView mPageTitle;
     private View mNavHome, mNavProfiles, mNavMods, mNavControls, mNavSettings;
     private ProgressLayout mProgressLayout;
     private ProgressServiceKeeper mProgressServiceKeeper;
@@ -89,6 +93,8 @@ public class LauncherActivity extends BaseActivity {
             mSettingsButton.setImageDrawable(ContextCompat.getDrawable(getBaseContext(), f instanceof MainMenuFragment
                     ? R.drawable.ic_menu_settings : R.drawable.ic_menu_home));
             updateNavSelection(f);
+            // The profile switcher lives in the top bar now, so refresh it whenever a top-level screen shows
+            if(mVersionSpinner != null && f.getId() == R.id.container_fragment) mVersionSpinner.syncSelection();
         }
     };
 
@@ -532,6 +538,12 @@ public class LauncherActivity extends BaseActivity {
         setNavItemSelected(mNavProfiles, f instanceof ProfilesFragment || f instanceof ProfileTypeSelectFragment || f instanceof ProfileEditorFragment);
         setNavItemSelected(mNavMods, f instanceof SearchModFragment || f instanceof ModVersionListFragment);
         setNavItemSelected(mNavSettings, f instanceof SettingsFragment);
+
+        int title = f instanceof MainMenuFragment ? R.string.nav_home
+                : (f instanceof ProfilesFragment || f instanceof ProfileTypeSelectFragment || f instanceof ProfileEditorFragment) ? R.string.nav_profiles
+                : (f instanceof SearchModFragment || f instanceof ModVersionListFragment) ? R.string.nav_mods
+                : f instanceof SettingsFragment ? R.string.nav_settings : 0;
+        if(title != 0 && mPageTitle != null) mPageTitle.setText(title);
     }
 
     /** Apply selection to the rail item and its icon/label so the accent state is visible. */
@@ -579,6 +591,9 @@ public class LauncherActivity extends BaseActivity {
         mSettingsButton = findViewById(R.id.setting_button);
         mAccountSpinner = findViewById(R.id.account_spinner);
         mProgressLayout = findViewById(R.id.progress_layout);
+        mPageTitle = findViewById(R.id.page_title);
+        mVersionSpinner = findViewById(R.id.mc_version_spinner);
+        findViewById(R.id.play_button).setOnClickListener(v -> ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true));
         bindNavigation();
     }
 }

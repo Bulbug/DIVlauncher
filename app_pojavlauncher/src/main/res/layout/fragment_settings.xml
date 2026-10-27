@@ -3,28 +3,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_app"
-    android:orientation="horizontal"
-    android:padding="12dp">
+    android:orientation="horizontal">
 
+    <!-- Category list; the page title lives in the top bar -->
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="168dp"
         android:layout_height="match_parent"
-        android:layout_weight="1"
         android:orientation="vertical">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:gravity="center_vertical"
-            android:text="@string/nav_settings"
-            android:textColor="@color/primary_text"
-            android:textSize="18sp"
-            android:fontFamily="sans-serif-medium"
-            android:textStyle="bold" />
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
             <LinearLayout
                 android:id="@+id/settings_categories"
@@ -32,6 +22,14 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
         </ScrollView>
+
+        <TextView
+            android:id="@+id/settings_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/secondary_text"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <androidx.fragment.app.FragmentContainerView
@@ -39,7 +37,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_marginStart="12dp"
-        android:layout_weight="3"
+        android:layout_weight="1"
         android:background="@drawable/panel_background"
         android:clipToOutline="true" />
 </LinearLayout>

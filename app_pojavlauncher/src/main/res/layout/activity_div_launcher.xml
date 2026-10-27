@@ -6,12 +6,15 @@
     android:layout_height="match_parent"
     android:background="@color/background_app">
 
-    <!-- Navigation rail -->
+    <!-- Floating navigation rail: icon + label, active item highlighted -->
     <LinearLayout
         android:id="@+id/nav_rail"
-        android:layout_width="64dp"
+        android:layout_width="76dp"
         android:layout_height="0dp"
-        android:background="@color/background_status_bar"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/rail_background"
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:paddingTop="8dp"
@@ -23,6 +26,7 @@
         <ImageView
             android:layout_width="28dp"
             android:layout_height="28dp"
+            android:layout_marginBottom="4dp"
             android:src="@drawable/ic_div_logo"
             android:importantForAccessibility="no" />
 
@@ -84,23 +88,69 @@
         </LinearLayout>
     </LinearLayout>
 
-    <com.kdt.mcgui.mcAccountSpinner
-        android:id="@+id/account_spinner"
+    <!-- Top bar on every screen: page title, profile switcher, Play, account -->
+    <LinearLayout
+        android:id="@+id/top_bar"
         android:layout_width="0dp"
-        android:layout_height="42dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="6dp"
-        android:background="@drawable/account_bar_background"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:dropDownWidth="wrap_content"
-        android:dropDownVerticalOffset="40dp"
-        android:clickable="true"
-        android:focusable="true"
+        android:layout_height="44dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toEndOf="@id/nav_rail"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/page_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:text="@string/nav_home"
+            android:textColor="@color/primary_text"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <com.kdt.mcgui.mcVersionSpinner
+            android:id="@+id/mc_version_spinner"
+            android:layout_width="190dp"
+            android:layout_height="44dp"
+            android:background="@drawable/account_bar_background"
+            android:drawableEnd="@drawable/spinner_arrow"
+            app:drawableEndPadding="@dimen/_1sdp"
+            app:drawableEndSize="12dp"
+            app:drawableStartIntegerScaling="true"
+            app:drawableStartSize="28dp" />
+
+        <com.kdt.mcgui.MineButton
+            android:id="@+id/play_button"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="10dp"
+            android:minWidth="96dp"
+            android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+            android:drawableStart="@drawable/ic_play"
+            android:drawablePadding="8dp"
+            android:text="@string/main_play" />
+
+        <com.kdt.mcgui.mcAccountSpinner
+            android:id="@+id/account_spinner"
+            android:layout_width="150dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/account_bar_background"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:dropDownWidth="wrap_content"
+            android:dropDownVerticalOffset="40dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
 
     <!-- Kept for LauncherActivity; navigation now lives in the rail -->
     <ImageButton
@@ -119,10 +169,13 @@
         android:id="@+id/container_fragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="10dp"
         app:layout_constraintStart_toEndOf="@id/nav_rail"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/progress_layout"
-        app:layout_constraintTop_toBottomOf="@+id/account_spinner" />
+        app:layout_constraintTop_toBottomOf="@+id/top_bar" />
 
     <com.kdt.mcgui.ProgressLayout
         android:id="@+id/progress_layout"

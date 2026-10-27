@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import net.kdt.pojavlaunch.BuildConfig;
 import net.kdt.pojavlaunch.R;
 import net.kdt.pojavlaunch.prefs.screens.LauncherPreferenceControlFragment;
 import net.kdt.pojavlaunch.prefs.screens.LauncherPreferenceExperimentalFragment;
@@ -54,6 +55,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        ((TextView) view.findViewById(R.id.settings_version)).setText(getString(R.string.settings_version, BuildConfig.VERSION_NAME));
         LinearLayout list = view.findViewById(R.id.settings_categories);
         LayoutInflater inflater = LayoutInflater.from(view.getContext());
         mItems.clear();
