@@ -18,6 +18,7 @@ import java.util.List;
 public class RTSpinnerAdapter implements SpinnerAdapter {
     final Context mContext;
     final List<Runtime> mRuntimes;
+
     public RTSpinnerAdapter(@NonNull Context context, List<Runtime> runtimes) {
         mRuntimes = runtimes;
         Runtime runtime = new Runtime("<Default>", "", null, 0);
@@ -93,10 +94,4 @@ public class RTSpinnerAdapter implements SpinnerAdapter {
     public boolean isEmpty() {
         return mRuntimes.isEmpty();
     }
-
-    @Override
-    public View getDropDownView(int position, View convertView, ViewGroup parent) {
-        return getView(position,convertView,parent);
-    }
-
 }
