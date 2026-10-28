@@ -26,6 +26,8 @@ import net.kdt.pojavlaunch.extra.ExtraConstants;
 import net.kdt.pojavlaunch.extra.ExtraCore;
 import net.kdt.pojavlaunch.fragments.ProfileEditorFragment;
 import net.kdt.pojavlaunch.fragments.ProfileTypeSelectFragment;
+import net.kdt.pojavlaunch.PojavProfile;
+import net.kdt.pojavlaunch.prefs.AccountProfiles;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.profiles.ProfileAdapter;
 import net.kdt.pojavlaunch.profiles.ProfileAdapterExtra;
@@ -67,10 +69,13 @@ public class mcVersionSpinner extends ExtendedTextView {
     /** Set the selection AND saves it as a shared preference */
     public void setProfileSelection(int position){
         setSelection(position);
+        Object item = mProfileAdapter.getItem(position);
         LauncherPreferences.DEFAULT_PREF.edit()
-                .putString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE,
-                        mProfileAdapter.getItem(position).toString())
+                .putString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE, item.toString())
                 .apply();
+        // Each account remembers its own profile (restored when the account is picked again)
+        if(item instanceof String)
+            AccountProfiles.remember(PojavProfile.getCurrentProfileName(getContext()), (String) item);
     }
 
     public void setSelection(int position){

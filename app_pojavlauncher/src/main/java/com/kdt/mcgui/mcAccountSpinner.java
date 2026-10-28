@@ -44,6 +44,8 @@ import net.kdt.pojavlaunch.PojavApplication;
 import net.kdt.pojavlaunch.PojavProfile;
 import net.kdt.pojavlaunch.R;
 import net.kdt.pojavlaunch.Tools;
+import net.kdt.pojavlaunch.prefs.AccountProfiles;
+import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.authenticator.listener.DoneListener;
 import net.kdt.pojavlaunch.authenticator.elyby.ElyByTokenStore;
 import net.kdt.pojavlaunch.authenticator.elyby.ElyByAuthClient;
@@ -309,6 +311,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
             });
         }
         ElyByTokenStore.deleteToken(accountName);
+        AccountProfiles.forget(accountName);
         File accountFile = new File(Tools.DIR_ACCOUNT_NEW, accountName + ".json");
         if(accountFile.exists()) accountFile.delete();
         if (wasActive) PojavProfile.setCurrentProfile(getContext(), null);
@@ -436,6 +439,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
                 return;
             }
             setSelection(position);
+            applyAccountProfile(selectedAccount.username);
         }else {
             // Restore the active profile; if it was removed or corrupted, select the first saved account.
             selectedAccount = PojavProfile.getCurrentProfileContent(getContext(), null);
@@ -452,6 +456,21 @@ public class mcAccountSpinner extends AppCompatSpinner {
 
         mSelectecAccount = selectedAccount;
         setImageFromSelectedAccount();
+    }
+
+    /**
+     * The user switched to another account: bring back the game profile that account used last.
+     * An account with nothing remembered keeps the current profile (and remembers it from then on).
+     */
+    private void applyAccountProfile(String account) {
+        String wanted = AccountProfiles.get(account);
+        if(AccountProfiles.exists(wanted)) {
+            LauncherPreferences.DEFAULT_PREF.edit()
+                    .putString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE, wanted)
+                    .apply();
+        }
+        View versionSpinner = getRootView().findViewById(R.id.mc_version_spinner);
+        if(versionSpinner instanceof mcVersionSpinner) ((mcVersionSpinner) versionSpinner).syncSelection();
     }
 
     private void showRenameOfflineDialog(Context context, String oldName) {
@@ -491,6 +510,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
                         account.save();
                         File oldFile = new File(Tools.DIR_ACCOUNT_NEW, oldName + ".json");
                         if (oldFile.exists()) oldFile.delete();
+                        AccountProfiles.rename(oldName, newName);
                         if (wasActive) PojavProfile.setCurrentProfile(context, newName);
                         reloadAccounts(true, 0);
                     } catch (IOException exception) {
@@ -549,6 +569,14 @@ public class mcAccountSpinner extends AppCompatSpinner {
 
             ExtendedTextView textview = convertView.findViewById(R.id.account_item);
             ImageView deleteButton = convertView.findViewById(R.id.delete_account_button);
+            ImageView editButton = convertView.findViewById(R.id.edit_account_button);
+            // The name text must NOT be clickable or long-clickable: a clickable child swallows the touch,
+            // so neither the closed control nor the popup rows would ever see the tap (this is what made
+            // "Add account" feel dead). Whole rows are tapped through the list / spinner instead.
+            textview.setClickable(false);
+            textview.setLongClickable(false);
+            textview.setFocusable(false);
+            editButton.setVisibility(View.GONE);
             String username = super.getItem(position);
 
             // Handle the "Add account section"
@@ -556,7 +584,6 @@ public class mcAccountSpinner extends AppCompatSpinner {
                 textview.setText(username);
                 textview.setTextColor(ContextCompat.getColor(getContext(), R.color.accent));
                 textview.setCompoundDrawables(ResourcesCompat.getDrawable(parent.getResources(), R.drawable.ic_add, null), null, null, null);
-                textview.setOnLongClickListener(null);
                 deleteButton.setVisibility(View.GONE);
             }
             else {
@@ -570,6 +597,8 @@ public class mcAccountSpinner extends AppCompatSpinner {
                 row.append('\n');
                 int detailStart = row.length();
                 row.append(typeLabel);
+                String rememberedProfile = mForPopup ? AccountProfiles.displayName(username) : null;
+                if(rememberedProfile != null) row.append(" · ").append(rememberedProfile);
                 int detailEnd = row.length();
                 row.setSpan(new RelativeSizeSpan(0.85f), detailStart, detailEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 row.setSpan(new ForegroundColorSpan(ContextCompat.getColor(getContext(), R.color.secondary_text)), detailStart, detailEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -581,10 +610,15 @@ public class mcAccountSpinner extends AppCompatSpinner {
                     row.setSpan(new ForegroundColorSpan(ContextCompat.getColor(getContext(), R.color.accent)), activeStart, row.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
                 textview.setText(row);
-                textview.setOnLongClickListener(v -> {
-                    showRenameOfflineDialog(getContext(), username);
-                    return true;
-                });
+                if(!mForPopup) {
+                    // nothing: the closed control only shows avatar and name
+                } else if(account != null && account.isOffline()) {
+                    editButton.setVisibility(View.VISIBLE);
+                    editButton.setOnClickListener(v -> {
+                        dismissAccountPopup();
+                        showRenameOfflineDialog(getContext(), username);
+                    });
+                }
                 Drawable accountHead = mImageCache.get(username);
                 if (accountHead == null){
                     accountHead = new BitmapDrawable(parent.getResources(), MinecraftAccount.getSkinFace(username));
@@ -610,6 +644,7 @@ public class mcAccountSpinner extends AppCompatSpinner {
             if(mForPopup) return view;
             // Closed spinner: just avatar + name on a single line, sized to the control
             view.findViewById(R.id.delete_account_button).setVisibility(View.GONE);
+            view.findViewById(R.id.edit_account_button).setVisibility(View.GONE);
             ExtendedTextView closedText = view.findViewById(R.id.account_item);
             closedText.setText(super.getItem(position));
             ViewGroup.LayoutParams lp = view.getLayoutParams();

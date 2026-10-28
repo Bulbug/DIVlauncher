@@ -13,9 +13,10 @@ static def getDateSeconds() {
 }
 
 // App version shown in Android's app info. Our own scheme (no upstream codenames, no git calls):
-//   tag build   (git tag v1.2.0)  -> 1.2.0
-//   CI nightly  (default branch)  -> <divVersion>-nightly.<7-char commit>
-//   local build                   -> <divVersion>-local
+//   tag build, e.g. DIVlauncher-v1.2.0 or v1.2.0  -> 1.2.0
+//   build published as the "Latest" release        -> <divVersion>
+//   any other CI build (branches, pull requests)   -> <divVersion>-dev.<7-char commit>
+//   local build                                    -> <divVersion>-local
 // <divVersion> is set in gradle.properties.
 def getVersionName = {
     String base = project.hasProperty('divVersion') ? project.property('divVersion').toString().trim() : '1.0.0'
@@ -23,9 +24,10 @@ def getVersionName = {
     String refName = System.getenv("GITHUB_REF_NAME")
     String sha = System.getenv("GITHUB_SHA")
     if (refType == "tag" && refName != null && !refName.trim().isEmpty()) {
-        return refName.trim().replaceFirst(/^[vV]/, '')
+        return refName.trim().replaceFirst(/(?i)^(DIVlauncher-)?v?/, '')
     }
-    if (sha != null && sha.length() >= 7) return base + '-nightly.' + sha.substring(0, 7)
+    if ("true".equals(System.getenv("DIV_RELEASE_BUILD"))) return base
+    if (sha != null && sha.length() >= 7) return base + '-dev.' + sha.substring(0, 7)
     return base + '-local'
 }
 

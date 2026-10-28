@@ -27,6 +27,19 @@
 
         tools:ignore="RtlSymmetry" />
 
+    <!-- Rename (offline accounts only; shown from code) -->
+    <ImageView
+        android:id="@+id/edit_account_button"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackground"
+        android:src="@drawable/ic_edit_profile"
+        android:tint="@color/secondary_text"
+        android:contentDescription="@string/account_rename"
+        android:padding="13dp"
+        android:visibility="gone"
+        />
+
     <!-- Fun fact, if I put an Image button, the spinner fails to put an onclick listener on the extended view -->
     <ImageView
         android:id="@+id/delete_account_button"

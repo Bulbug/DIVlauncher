@@ -113,9 +113,9 @@ public class SearchModFragment extends Fragment implements ModItemAdapter.Search
 
         mDefaultTextColor = mStatusTextView.getTextColors();
         mOverlayTopCache = getResources().getDimension(R.dimen.fragment_padding_medium);
-        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item,
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(requireContext(), R.layout.item_spinner_selected,
                 Arrays.asList(TYPE_LABELS));
-        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        typeAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
         mTypeSpinner.setAdapter(typeAdapter);
 
         mRecyclerview.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -185,8 +185,8 @@ public class SearchModFragment extends Fragment implements ModItemAdapter.Search
                 return safe(left.profile.name).toLowerCase(Locale.ROOT).compareTo(safe(right.profile.name).toLowerCase(Locale.ROOT));
             }
         });
-        mInstanceAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, mInstances);
-        mInstanceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mInstanceAdapter = new ArrayAdapter<>(requireContext(), R.layout.item_spinner_selected, mInstances);
+        mInstanceAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
         mInstanceSpinner.setAdapter(mInstanceAdapter);
         int selected = 0;
         for (int i = 0; i < mInstances.size(); i++) if (currentKey.equals(mInstances.get(i).key)) { selected = i; break; }
@@ -280,12 +280,12 @@ public class SearchModFragment extends Fragment implements ModItemAdapter.Search
             Spinner providerSpinner = dialog.findViewById(R.id.search_mod_provider_spinner);
             if (selectedVersion == null || selectVersion == null || apply == null || loaderSpinner == null || providerSpinner == null) return;
             selectedVersion.setText(mSearchFilters.mcVersion == null ? "" : mSearchFilters.mcVersion);
-            ArrayAdapter<String> loaderAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, Arrays.asList(LOADER_LABELS));
-            loaderAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            ArrayAdapter<String> loaderAdapter = new ArrayAdapter<>(requireContext(), R.layout.item_spinner_selected, Arrays.asList(LOADER_LABELS));
+            loaderAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
             loaderSpinner.setAdapter(loaderAdapter);
             loaderSpinner.setSelection(indexOf(LOADER_KEYS, safe(mSearchFilters.loader)));
-            ArrayAdapter<String> providerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, Arrays.asList(PROVIDER_LABELS));
-            providerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            ArrayAdapter<String> providerAdapter = new ArrayAdapter<>(requireContext(), R.layout.item_spinner_selected, Arrays.asList(PROVIDER_LABELS));
+            providerAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
             providerSpinner.setAdapter(providerAdapter);
             providerSpinner.setSelection(indexOf(PROVIDER_KEYS, safe(mSearchFilters.provider)));
             selectVersion.setOnClickListener(v -> VersionSelectorDialog.open(v.getContext(), true,

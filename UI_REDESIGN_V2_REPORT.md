@@ -67,8 +67,34 @@ Follows the approved preview (labeled icon rail; top bar with profile switcher, 
 - **Version selector dialog:** no divider lines in its list.
 - No Java logic changed (only the progress bar's background drawable in `ProgressLayout`).
 
+## Step 10: Whole account block clickable, rename button
+- **Root cause of the unresponsive Add Account tap:** the account name view (`account_item`) was marked long-clickable (`setOnLongClickListener`, used for renaming; even `setOnLongClickListener(null)` makes a view long-clickable). A clickable child consumes the touch, so the closed account control and the popup rows never received the tap. The earlier fixes (explicit popup, direct fragment commit) worked around the symptom, not this cause.
+- **Fix (`mcAccountSpinner`):** the name view is explicitly non-clickable/non-focusable in every row, so the whole account control and every popup row (including the whole "Add account" row) receive taps.
+- **Rename is now visible:** offline accounts show a pencil button in the popup (the old long-press rename was removed because it caused the bug). Microsoft and Ely.by accounts cannot be renamed here because their names come from the service.
+- Multiple accounts were already supported (one saved file per account; offline, Microsoft and Ely.by can be mixed) and each popup row switches the active account.
+
+## Step 11: One style for every dropdown
+- **Theme default:** `spinnerStyle` (`DivSpinner`) in the app theme (portrait and landscape): every Spinner is now a rounded pill with a chevron, with a rounded popup list, unless a layout sets its own look. This covers the per-version settings, the controller remapper mode and any other plain spinner.
+- **Rows:** new shared layouts `item_spinner_selected` (value in the closed pill) and `item_spinner_dropdown` (48 dp rows, 14 sp, primary colour) replace the platform spinner layouts in the mod search/filter pickers, Fabric/Quilt installer, gamepad mapper, profile editor renderer, the Java runtime list (`RTSpinnerAdapter`) and the expanded mod card version list (`SimpleArrayAdapter`).
+- **Profile switcher popup (top bar):** rounded popup background with clipped corners; its rows are the restyled version rows.
+- **Fabric/Quilt installer:** underline fields replaced by the pill style.
+- **Deliberately kept compact:** the in-game control editor spinners and the controller key-mapping rows keep their old padding (explicitly pinned) so those narrow panels do not change layout; they still get the rounded popup list.
+
+## Step 12: Game profile per account
+- **New `AccountProfiles`** (`net.kdt.pojavlaunch.prefs`): remembers, per launcher account, the last game profile used (stored in the launcher preferences as `accountProfile:<account>`).
+- **Remember:** every profile selection (top-bar switcher, Profiles screen Select, re-sync) goes through `mcVersionSpinner.setProfileSelection()`, which now saves the choice for the current account.
+- **Restore:** when the user picks another account in the account popup, `mcAccountSpinner.applyAccountProfile()` switches the current profile to the one that account used last (if it still exists) and updates the top-bar switcher. An account with nothing remembered keeps the current profile and remembers it from then on.
+- **Clean-up:** deleting an account forgets its profile; renaming an offline account moves it; a deleted profile is simply ignored.
+- **Popup rows:** the second line now shows the sign-in type and the remembered profile, e.g. "Offline - Survival - Active".
+- Startup and list reloads do not restore anything, so the last session's account and profile stay as they were.
+
+## Step 13: "Latest" release named after the app and version
+- The rolling "nightly" pre-release is gone. A push to the default branch now publishes the newest build as the **Latest** release (not a pre-release), tagged `DIVlauncher-v<divVersion>` and titled `DIVlauncher v<divVersion>` (currently `DIVlauncher-v1.0.0`); the same release is replaced on each push until `divVersion` in `gradle.properties` is raised. The old `nightly` release and tag are deleted automatically.
+- Pushing a git tag `DIVlauncher-v1.2.0` (or `v1.2.0`) publishes that version as its own Latest release.
+- App version names: published builds use the clean version (`1.0.0`); other CI builds `1.0.0-dev.<commit>`; local builds `1.0.0-local`.
+
 ## Not done yet (next steps)
-The Controls screen (separate activity) and the in-game screens are not restyled; side dialogs used by the controls editor (`dialog_side_dialog` and friends) are untouched.
+The Controls screen (separate activity) and the in-game screens are not restyled. There is no setting yet to turn the per-account profile memory off.
 
 ## Validation
-Static only: all XML parses and referenced colors, drawables and styles exist (the AppCompat parents are library styles). No Gradle build and no on-device test were possible; check the next CI build and the screens on a phone (landscape).
+Static only: brackets balance, the new code uses only existing fields and methods. No Gradle build and no on-device test were possible; test with two accounts and two profiles on a phone.

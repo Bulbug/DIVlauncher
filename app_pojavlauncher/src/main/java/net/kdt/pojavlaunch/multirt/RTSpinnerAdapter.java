@@ -54,9 +54,18 @@ public class RTSpinnerAdapter implements SpinnerAdapter {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+        return createRow(R.layout.item_spinner_selected, position, convertView, parent);
+    }
+
+    @Override
+    public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+        return createRow(R.layout.item_spinner_dropdown, position, convertView, parent);
+    }
+
+    private View createRow(int layout, int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         View view = convertView != null?
                 convertView:
-                LayoutInflater.from(mContext).inflate(R.layout.item_simple_list_1, parent,false);
+                LayoutInflater.from(mContext).inflate(layout, parent,false);
 
         Runtime runtime = mRuntimes.get(position);
         if(position == mRuntimes.size() - 1 ){

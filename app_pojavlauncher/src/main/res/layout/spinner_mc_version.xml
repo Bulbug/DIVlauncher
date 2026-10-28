@@ -9,5 +9,7 @@
     android:scrollbarThumbVertical="@color/minebutton_color"
     android:paddingVertical="@dimen/_6sdp"
     android:scrollbarSize="@dimen/padding_medium"
-    android:background="@color/background_bottom_bar"
+    android:background="@drawable/popup_background"
+    android:clipToOutline="true"
+    android:clipToPadding="false"
     android:divider="@null" />

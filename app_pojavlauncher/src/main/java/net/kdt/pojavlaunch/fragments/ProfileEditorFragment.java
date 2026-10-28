@@ -87,7 +87,9 @@ public class ProfileEditorFragment extends Fragment implements CropperUtils.Crop
         List<String> renderList = new ArrayList<>(renderersList.rendererDisplayNames.length + 1);
         renderList.addAll(Arrays.asList(renderersList.rendererDisplayNames));
         renderList.add(view.getContext().getString(R.string.global_default));
-        mDefaultRenderer.setAdapter(new ArrayAdapter<>(getContext(), R.layout.item_simple_list_1, renderList));
+        ArrayAdapter<String> rendererAdapter = new ArrayAdapter<>(getContext(), R.layout.item_spinner_selected, renderList);
+        rendererAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
+        mDefaultRenderer.setAdapter(rendererAdapter);
 
         // Set up behaviors
         mSaveButton.setOnClickListener(v -> {

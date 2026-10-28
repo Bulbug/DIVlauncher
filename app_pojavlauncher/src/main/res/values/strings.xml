@@ -465,6 +465,7 @@
     <string name="home_ready">Ready to play</string>
     <string name="home_quick_actions">Quick actions</string>
     <string name="auth_back">Back</string>
+    <string name="account_rename">Rename account</string>
     <string name="account_active">Active</string>
     <string name="auth_microsoft_sub">Sign in with your Microsoft account</string>
     <string name="auth_elyby_sub">Sign in through your browser</string>

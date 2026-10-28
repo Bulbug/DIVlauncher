@@ -5,7 +5,7 @@ on:
     types: [ opened, reopened ]
   push:
     branches: [ '**' ]
-    tags: [ 'v*' ]
+    tags: [ 'v*', 'DIVlauncher-v*' ]
   workflow_dispatch:
 
 # Needed to publish GitHub Releases with the GITHUB_TOKEN
@@ -21,6 +21,9 @@ jobs:
   build:
     name: Build ${{ matrix.abi }}
     runs-on: ubuntu-22.04
+    env:
+      # Builds that become a published release get the clean version number (no "-dev.<commit>" suffix)
+      DIV_RELEASE_BUILD: ${{ (github.ref_type == 'tag' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && 'true' || 'false' }}
     strategy:
       fail-fast: false
       matrix:
@@ -166,8 +169,10 @@ jobs:
           name: DIVlauncher-${{ matrix.abi }}
           path: out/DIVlauncher-${{ matrix.abi }}-*
 
-  # Pushing to the default branch updates a rolling "nightly" pre-release.
-  # Pushing a tag like v1.0.0 creates a normal, versioned release.
+  # Pushing to the default branch publishes the newest build as the "Latest" release, named
+  #   tag:   DIVlauncher-v<divVersion>      title: DIVlauncher v<divVersion>
+  # (the same release is replaced on every push until you raise divVersion in gradle.properties).
+  # Pushing a tag such as DIVlauncher-v1.2.0 (or v1.2.0) publishes that version as its own "Latest" release.
   release:
     name: Publish release
     needs: build
@@ -179,6 +184,12 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      - name: Check out (only to read the version)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: gradle.properties
+          sparse-checkout-cone-mode: false
+
       - name: Download all APKs
         uses: actions/download-artifact@v4
         with:
@@ -186,19 +197,42 @@ jobs:
           merge-multiple: true
           path: out
 
-      - name: Publish nightly release
-        if: ${{ github.ref_type == 'branch' }}
+      - name: Work out the release name
+        id: rel
         run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#DIVlauncher-}"
+            VERSION="${VERSION#[vV]}"
+            TAG="$GITHUB_REF_NAME"
+          else
+            VERSION="$(grep '^divVersion=' gradle.properties | cut -d= -f2 | tr -d '\r[:space:]')"
+            TAG="DIVlauncher-v${VERSION}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish latest release (default branch)
+        if: ${{ github.ref_type == 'branch' }}
+        env:
+          VERSION: ${{ steps.rel.outputs.version }}
+          TAG: ${{ steps.rel.outputs.tag }}
+        run: |
+          # Remove the old rolling pre-release from earlier versions of this workflow, then replace this version's release
           gh release delete nightly --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
-          gh release create nightly out/* --repo "$GITHUB_REPOSITORY" \
+          gh release delete "$TAG" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+          gh release create "$TAG" out/* --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --prerelease \
-            --title "DIVlauncher nightly (${GITHUB_SHA::7})" \
-            --notes "Automatic build of commit ${GITHUB_SHA::7}. Most phones need the arm64-v8a file."
+            --latest \
+            --title "DIVlauncher v${VERSION}" \
+            --notes "DIVlauncher v${VERSION}, built from commit ${GITHUB_SHA::7}. Most phones need the arm64-v8a file."
 
       - name: Publish tagged release
         if: ${{ github.ref_type == 'tag' }}
+        env:
+          VERSION: ${{ steps.rel.outputs.version }}
+          TAG: ${{ steps.rel.outputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" \
-            --title "DIVlauncher $GITHUB_REF_NAME" \
+          gh release create "$TAG" out/* --repo "$GITHUB_REPOSITORY" \
+            --latest \
+            --title "DIVlauncher v${VERSION}" \
             --generate-notes

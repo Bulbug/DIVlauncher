@@ -67,7 +67,8 @@ public class GamepadMapperFragment extends Fragment implements
         buttonRecyclerView.requestFocus();
         mInputManager = new RemapperManager(view.getContext(), mRemapperViewBuilder);
         Spinner grabStateSpinner = view.findViewById(R.id.gamepad_remapper_mode_spinner);
-        ArrayAdapter<String> mGrabStateAdapter = new ArrayAdapter<>(view.getContext(), R.layout.support_simple_spinner_dropdown_item);
+        ArrayAdapter<String> mGrabStateAdapter = new ArrayAdapter<>(view.getContext(), R.layout.item_spinner_selected);
+        mGrabStateAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
         mGrabStateAdapter.addAll(getString(R.string.customctrl_visibility_in_menus), getString(R.string.customctrl_visibility_ingame));
         grabStateSpinner.setAdapter(mGrabStateAdapter);
         grabStateSpinner.setSelection(0);

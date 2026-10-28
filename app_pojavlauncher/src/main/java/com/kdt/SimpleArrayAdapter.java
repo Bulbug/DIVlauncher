@@ -8,6 +8,8 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import net.kdt.pojavlaunch.R;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -56,8 +58,17 @@ public class SimpleArrayAdapter<T> extends BaseAdapter {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+        return createRow(R.layout.item_spinner_selected, position, convertView, parent);
+    }
+
+    @Override
+    public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+        return createRow(R.layout.item_spinner_dropdown, position, convertView, parent);
+    }
+
+    private View createRow(int layout, int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         if(convertView == null){
-            convertView = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_1, parent, false);
+            convertView = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
         }
 
         TextView v = (TextView) convertView;

@@ -105,6 +105,8 @@
     -->
     <Spinner
         android:id="@+id/editMapping_spinner_1"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:layout_width="0dp"
         android:layout_height="30dp"
         android:dropDownWidth="match_parent"
@@ -120,6 +122,8 @@
 
     <Spinner
         android:id="@+id/editMapping_spinner_2"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:layout_width="0dp"
         android:layout_height="30dp"
         android:dropDownWidth="match_parent"
@@ -135,6 +139,8 @@
 
     <Spinner
         android:id="@+id/editMapping_spinner_3"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:layout_width="0dp"
         android:layout_height="30dp"
         android:dropDownWidth="match_parent"
@@ -150,6 +156,8 @@
 
     <Spinner
         android:id="@+id/editMapping_spinner_4"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:layout_width="0dp"
         android:layout_height="30dp"
         android:dropDownWidth="match_parent"
@@ -271,6 +279,8 @@
 
     <Spinner
         android:id="@+id/editOrientation_spinner"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:layout_width="0dp"
         android:layout_height="@dimen/_30sdp"
         android:background="@android:color/transparent"

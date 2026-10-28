@@ -27,13 +27,20 @@ its original README is kept in `UPSTREAM_PojavLauncher_README.md`.
 Which APK do I download? Almost every modern phone needs **arm64-v8a**. Older 32-bit phones need
 `armeabi-v7a`; `x86_64` and `x86` are for emulators and some Chromebooks.
 
-- Every push to the default branch builds the APK and updates a rolling **nightly** pre-release on the Releases page.
+- Every push to the default branch builds the APK and publishes it as the **Latest** release on the Releases page.
 - Pushing a tag such as `v1.0.0` (`git tag v1.0.0 && git push origin v1.0.0`) publishes a normal versioned release.
 - CI always builds the normal **release** app (named "DIVlauncher", no "Debug" label). It is signed with your own
   release key when the signing secrets exist, and with a shared test key otherwise. Debug builds (`assembleDebug`,
   labelled "DIVlauncher Debug") are for local development only.
-- Version names: a tag `v1.2.0` gives version `1.2.0`; nightly builds are `<divVersion>-nightly.<commit>` (base
-  version `divVersion` in `gradle.properties`); local builds are `<divVersion>-local`.
+- Releases and version names:
+  - Every push to the default branch publishes the newest build as the **Latest** GitHub release, tagged
+    `DIVlauncher-v<divVersion>` and titled `DIVlauncher v<divVersion>` (for example `DIVlauncher-v1.0.0`). The same
+    release is replaced on each push until you raise `divVersion` in `gradle.properties`.
+  - To publish a specific version as its own release, push a git tag such as `DIVlauncher-v1.2.0` (a plain `v1.2.0`
+    also works). The app version is then `1.2.0`.
+  - Builds that are not published (other branches, pull requests) are `<divVersion>-dev.<commit>`; local builds are
+    `<divVersion>-local`.
+  - The old rolling "nightly" pre-release is removed automatically on the next push.
 
 ### Release signing (one-time setup)
 
