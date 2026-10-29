@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Height 380dp and up: roomier rail and top bar -->
+    <dimen name="shell_topbar_height">44dp</dimen>
+    <dimen name="shell_nav_item_height">52dp</dimen>
+    <dimen name="shell_logo_size">28dp</dimen>
+    <dimen name="shell_logo_margin">4dp</dimen>
+    <dimen name="tile_min_height">104dp</dimen>
+</resources>

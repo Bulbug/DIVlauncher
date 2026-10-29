@@ -31,4 +31,20 @@
     <dimen name="fragment_padding_medium">@dimen/_10sdp</dimen>
     <!-- Misc paddings -->
     <dimen name="profile_editor_image_padding">@dimen/padding_small</dimen>
+
+    <dimen name="drawer_width">240dp</dimen>
+
+    <!-- Responsive launcher shell. Defaults = small phones (landscape width < 640dp, height < 380dp);
+         bigger screens override them in values-w640dp, values-w900dp, values-h380dp and values-h480dp. -->
+    <dimen name="shell_rail_width">64dp</dimen>
+    <dimen name="shell_profile_pill_width">132dp</dimen>
+    <dimen name="shell_account_pill_width">108dp</dimen>
+    <dimen name="shell_play_min_width">84dp</dimen>
+    <dimen name="shell_title_size">18sp</dimen>
+    <dimen name="settings_category_width">132dp</dimen>
+    <dimen name="shell_topbar_height">40dp</dimen>
+    <dimen name="shell_nav_item_height">44dp</dimen>
+    <dimen name="shell_logo_size">0dp</dimen>
+    <dimen name="shell_logo_margin">0dp</dimen>
+    <dimen name="tile_min_height">84dp</dimen>
 </resources>

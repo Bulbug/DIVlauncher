@@ -15,19 +15,28 @@
 
 		<net.kdt.pojavlaunch.customcontrols.handleview.DrawerPullButton
 			android:id="@+id/drawer_button"
-			android:layout_width="40dp"
-			android:layout_height="20dp"
-			android:padding="6dp"
+			android:layout_width="48dp"
+			android:layout_height="24dp"
+			android:padding="7dp"
 			android:elevation="10dp"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent" />
 
+		<!-- Small hint chip in the corner -->
 		<TextView
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:layout_alignParentRight="true"
+			android:layout_margin="8dp"
+			android:background="@drawable/chip_background"
+			android:paddingStart="12dp"
+			android:paddingEnd="12dp"
+			android:paddingTop="6dp"
+			android:paddingBottom="6dp"
 			android:text="@string/hint_control_mapping"
+			android:textColor="@color/secondary_text"
+			android:textSize="12sp"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintTop_toTopOf="parent" />
 
@@ -42,10 +51,15 @@
 
 	<ListView
 		android:id="@+id/customctrl_navigation_view"
-		android:layout_width="200dp"
+		android:layout_width="@dimen/drawer_width"
 		android:layout_height="match_parent"
 		android:layout_gravity="right"
-		android:background="?attr/colorBackgroundFloating"
+		android:background="@drawable/drawer_background"
+		android:divider="@null"
+		android:dividerHeight="0dp"
+		android:paddingTop="12dp"
+		android:paddingBottom="12dp"
+		android:clipToPadding="false"
 		android:fitsSystemWindows="false" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

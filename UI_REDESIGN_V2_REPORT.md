@@ -93,8 +93,20 @@ Follows the approved preview (labeled icon rail; top bar with profile switcher, 
 - Pushing a git tag `DIVlauncher-v1.2.0` (or `v1.2.0`) publishes that version as its own Latest release.
 - App version names: published builds use the clean version (`1.0.0`); other CI builds `1.0.0-dev.<commit>`; local builds `1.0.0-local`.
 
+## Step 14: Full screen and responsive sizing
+- **Real full screen:** `LauncherActivity` now hides the status and navigation bars (swipe from an edge to show them briefly) and draws behind the notch/cutout (`setFullscreen()` and `shouldIgnoreNotch()`), reusing the existing `Tools.setFullscreen` and `Tools.ignoreNotch`. Split-screen/multi-window still ignores the fullscreen request, as before.
+- **Safe areas:** `setupEdgeToEdge()` pads the root view by the notch, any system bars that are showing and the on-screen keyboard (measured from the visible frame, because immersive mode does not always resize the window), so the background fills the whole screen while buttons stay clear of the notch and the keyboard never covers the username field.
+- **Responsive sizes:** the shell uses dimension resources instead of fixed numbers. Defaults are for small phones; overrides exist for landscape width 640 dp and 900 dp (`values-w640dp`, `values-w900dp`: rail, profile/account pills, Play button, title size, settings category column) and for height 380 dp and 480 dp (`values-h380dp`, `values-h480dp`: top bar, nav item height, logo, tile height). The Profiles card grid now subtracts the actual rail width.
+- Not covered: a maximum content width on very large tablets/unfolded foldables (content simply stretches), and portrait (the app is landscape only).
+
+## Step 15: Controls editor
+- **Menu drawer:** the right-hand menu (add button, drawer, joystick, load, save, set as default, share) is now a rounded 240 dp panel with 52 dp rows (`item_drawer_row`, no divider lines); width is the `drawer_width` dimension.
+- **Hint:** the "tap to map" text became a small rounded chip; the pull-down gear handle is slightly larger (48 x 24 dp).
+- **Editor panels:** `background_control_editor` (used by the side dialog, quick settings and the colour selector) is a rounded `surface_raised` panel with a border; the side dialog title is bold and its Cancel/Confirm buttons use the new dialog button styles.
+- The control buttons themselves (user content), the per-button settings form fields and the colour picker internals are not changed, and no editor logic was touched.
+
 ## Not done yet (next steps)
-The Controls screen (separate activity) and the in-game screens are not restyled. There is no setting yet to turn the per-account profile memory off.
+The in-game HUD/menus and the inner forms of the control-button settings dialog keep their old look. The Performance toggle is planned but not started.
 
 ## Validation
-Static only: brackets balance, the new code uses only existing fields and methods. No Gradle build and no on-device test were possible; test with two accounts and two profiles on a phone.
+Static only: XML parses, referenced drawables/colors/styles/dimens exist, brackets balance. No Gradle build and no on-device test were possible; open the editor on a phone, pull the menu out and open a button's settings.

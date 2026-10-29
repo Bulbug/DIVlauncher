@@ -82,7 +82,7 @@
     </style>
     <style name="NavItem">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">52dp</item>
+        <item name="android:layout_height">@dimen/shell_nav_item_height</item>
         <item name="android:layout_marginStart">4dp</item>
         <item name="android:layout_marginEnd">4dp</item>
         <item name="android:layout_marginTop">2dp</item>
@@ -111,7 +111,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:minHeight">104dp</item>
+        <item name="android:minHeight">@dimen/tile_min_height</item>
         <item name="android:orientation">vertical</item>
         <item name="android:padding">14dp</item>
         <item name="android:background">@drawable/tile_background</item>

@@ -16,6 +16,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="@dimen/padding_moderate"
+        android:textColor="@color/primary_text"
+        android:textSize="18sp"
+        android:textStyle="bold"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
 
@@ -46,7 +49,7 @@
         android:orientation="horizontal">
         <Button
             android:id="@+id/side_dialog_start_button"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/DivDialogButtonNegative"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
@@ -58,7 +61,7 @@
 
         <Button
             android:id="@+id/side_dialog_end_button"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/DivDialogButtonPositive"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"

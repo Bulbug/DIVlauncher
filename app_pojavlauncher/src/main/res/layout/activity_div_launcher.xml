@@ -4,12 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/launcher_root"
     android:background="@color/background_app">
 
     <!-- Floating navigation rail: icon + label, active item highlighted -->
     <LinearLayout
         android:id="@+id/nav_rail"
-        android:layout_width="76dp"
+        android:layout_width="@dimen/shell_rail_width"
         android:layout_height="0dp"
         android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
@@ -24,9 +25,9 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginBottom="4dp"
+            android:layout_width="@dimen/shell_logo_size"
+            android:layout_height="@dimen/shell_logo_size"
+            android:layout_marginBottom="@dimen/shell_logo_margin"
             android:src="@drawable/ic_div_logo"
             android:importantForAccessibility="no" />
 
@@ -92,7 +93,7 @@
     <LinearLayout
         android:id="@+id/top_bar"
         android:layout_width="0dp"
-        android:layout_height="44dp"
+        android:layout_height="@dimen/shell_topbar_height"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="10dp"
         android:layout_marginTop="10dp"
@@ -110,15 +111,15 @@
             android:layout_marginStart="2dp"
             android:text="@string/nav_home"
             android:textColor="@color/primary_text"
-            android:textSize="22sp"
+            android:textSize="@dimen/shell_title_size"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end" />
 
         <com.kdt.mcgui.mcVersionSpinner
             android:id="@+id/mc_version_spinner"
-            android:layout_width="190dp"
-            android:layout_height="44dp"
+            android:layout_width="@dimen/shell_profile_pill_width"
+            android:layout_height="@dimen/shell_topbar_height"
             android:background="@drawable/account_bar_background"
             android:drawableEnd="@drawable/spinner_arrow"
             app:drawableEndPadding="@dimen/_1sdp"
@@ -129,9 +130,9 @@
         <com.kdt.mcgui.MineButton
             android:id="@+id/play_button"
             android:layout_width="wrap_content"
-            android:layout_height="44dp"
+            android:layout_height="@dimen/shell_topbar_height"
             android:layout_marginStart="10dp"
-            android:minWidth="96dp"
+            android:minWidth="@dimen/shell_play_min_width"
             android:paddingStart="18dp"
     android:paddingEnd="18dp"
             android:drawableStart="@drawable/ic_play"
@@ -140,8 +141,8 @@
 
         <com.kdt.mcgui.mcAccountSpinner
             android:id="@+id/account_spinner"
-            android:layout_width="150dp"
-            android:layout_height="44dp"
+            android:layout_width="@dimen/shell_account_pill_width"
+            android:layout_height="@dimen/shell_topbar_height"
             android:layout_marginStart="10dp"
             android:background="@drawable/account_bar_background"
             android:paddingStart="10dp"

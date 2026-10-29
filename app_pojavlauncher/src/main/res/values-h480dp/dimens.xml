@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Height 480dp and up (tablets, unfolded foldables) -->
+    <dimen name="shell_topbar_height">48dp</dimen>
+    <dimen name="shell_nav_item_height">60dp</dimen>
+    <dimen name="shell_logo_size">32dp</dimen>
+    <dimen name="shell_logo_margin">6dp</dimen>
+    <dimen name="tile_min_height">120dp</dimen>
+</resources>

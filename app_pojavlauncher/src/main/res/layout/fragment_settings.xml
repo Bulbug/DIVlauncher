@@ -7,7 +7,7 @@
 
     <!-- Category list; the page title lives in the top bar -->
     <LinearLayout
-        android:layout_width="168dp"
+        android:layout_width="@dimen/settings_category_width"
         android:layout_height="match_parent"
         android:orientation="vertical">
 

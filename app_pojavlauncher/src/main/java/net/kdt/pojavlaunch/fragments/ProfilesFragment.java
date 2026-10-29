@@ -74,8 +74,9 @@ public class ProfilesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         float density = getResources().getDisplayMetrics().density;
         float widthDp = getResources().getDisplayMetrics().widthPixels / density;
-        // Subtract the navigation rail, then fit cards of about 220dp
-        int span = Math.max(2, Math.min(4, (int) ((widthDp - 120f) / 220f)));
+        // Subtract the navigation rail and margins, then fit cards of about 220dp
+        float railDp = getResources().getDimension(R.dimen.shell_rail_width) / getResources().getDisplayMetrics().density;
+        int span = Math.max(2, Math.min(4, (int) ((widthDp - railDp - 44f) / 220f)));
         mFilters = view.findViewById(R.id.profiles_filters);
         mTopBarSpinner = requireActivity().findViewById(R.id.mc_version_spinner);
         if(mTopBarSpinner != null) mTopBarSpinner.addTextChangedListener(mTopBarWatcher);

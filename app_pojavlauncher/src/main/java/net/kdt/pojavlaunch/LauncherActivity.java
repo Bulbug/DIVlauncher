@@ -344,20 +344,70 @@ public class LauncherActivity extends BaseActivity {
     private ActivityResultLauncher<String> mRequestNotificationPermissionLauncher;
     private WeakReference<Runnable> mRequestNotificationPermissionRunnable;
 
+    /* Edge-to-edge: the background is drawn behind the notch, content is moved into the safe area (see setupEdgeToEdge) */
     @Override
     protected boolean shouldIgnoreNotch() {
-        return getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT;
+        return true;
     }
 
+    /* Real full screen: status and navigation bars are hidden (swipe from the edge to show them briefly) */
     @Override
     public boolean setFullscreen() {
-        return false;
+        return true;
+    }
+
+    private int mInsetLeft, mInsetTop, mInsetRight, mInsetBottom;
+    private final android.graphics.Rect mVisibleFrame = new android.graphics.Rect();
+
+    /**
+     * The window is drawn under the notch and the (hidden) system bars, so keep the actual content inside the
+     * safe area: notch/cutout, system bars when they are showing, and the on-screen keyboard.
+     */
+    private void setupEdgeToEdge() {
+        final View root = findViewById(R.id.launcher_root);
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int l, t, r, b;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.graphics.Insets safe = insets.getInsets(
+                        android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
+                l = safe.left; t = safe.top; r = safe.right; b = safe.bottom;
+            } else {
+                l = insets.getSystemWindowInsetLeft(); t = insets.getSystemWindowInsetTop();
+                r = insets.getSystemWindowInsetRight(); b = insets.getSystemWindowInsetBottom();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    android.view.DisplayCutout cutout = insets.getDisplayCutout();
+                    if (cutout != null) {
+                        l = Math.max(l, cutout.getSafeInsetLeft()); t = Math.max(t, cutout.getSafeInsetTop());
+                        r = Math.max(r, cutout.getSafeInsetRight()); b = Math.max(b, cutout.getSafeInsetBottom());
+                    }
+                }
+            }
+            mInsetLeft = l; mInsetTop = t; mInsetRight = r; mInsetBottom = b;
+            applyRootPadding(root);
+            return insets;
+        });
+        // Immersive mode does not always resize the window for the keyboard, so measure it ourselves
+        root.getViewTreeObserver().addOnGlobalLayoutListener(() -> applyRootPadding(root));
+        root.requestApplyInsets();
+    }
+
+    private void applyRootPadding(View root) {
+        root.getWindowVisibleDisplayFrame(mVisibleFrame);
+        int screenHeight = root.getRootView().getHeight();
+        int keyboard = Math.max(0, screenHeight - mVisibleFrame.bottom);
+        if (keyboard < screenHeight / 5) keyboard = 0; // a navigation bar or rounded corner, not a keyboard
+        int bottom = Math.max(mInsetBottom, keyboard);
+        if (root.getPaddingLeft() != mInsetLeft || root.getPaddingTop() != mInsetTop
+                || root.getPaddingRight() != mInsetRight || root.getPaddingBottom() != bottom) {
+            root.setPadding(mInsetLeft, mInsetTop, mInsetRight, bottom);
+        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_div_launcher);
+        setupEdgeToEdge();
         FragmentManager fragmentManager = getSupportFragmentManager();
         // If we don't have a back stack root yet...
         if(fragmentManager.getBackStackEntryCount() < 1) {
