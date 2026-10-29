@@ -176,10 +176,11 @@ public class mcAccountSpinner extends AppCompatSpinner {
     };
 
     private void init(){
-        // Set visual properties
-        setBackgroundColor(getResources().getColor(R.color.background_status_bar));
+        // Set visual properties. The rounded pill background comes from the layout (account_bar_background);
+        // it used to be replaced here by a flat colour.
         mLoginBarPaint.setColor(getResources().getColor(R.color.minebutton_color));
-        mLoginBarPaint.setStrokeWidth(getResources().getDimensionPixelOffset(R.dimen._2sdp));
+        mLoginBarPaint.setStrokeWidth(getResources().getDisplayMetrics().density * 3f);
+        mLoginBarPaint.setStrokeCap(Paint.Cap.ROUND);
 
         // Set behavior
         // AdapterView (including Spinner) forbids setOnClickListener and throws during
@@ -289,8 +290,16 @@ public class mcAccountSpinner extends AppCompatSpinner {
     protected void onDraw(Canvas canvas) {
         if(mLoginBarWidth == -1) mLoginBarWidth = getWidth(); // Initial draw
 
-        float bottom = getHeight() - mLoginBarPaint.getStrokeWidth()/2;
-        canvas.drawLine(0, bottom, mLoginBarWidth, bottom, mLoginBarPaint);
+        // Idle (finished, no error): draw nothing. While logging in or after an error: a thin rounded line
+        // inside the pill, near its bottom edge.
+        boolean finished = mLoginBarWidth >= getWidth() - 1;
+        boolean error = mLoginBarPaint.getColor() == Color.RED;
+        if(finished && !error) return;
+        float density = getResources().getDisplayMetrics().density;
+        float inset = 14f * density;
+        float bottom = getHeight() - 5f * density;
+        float end = Math.max(inset, Math.min(mLoginBarWidth, getWidth()) - inset);
+        canvas.drawLine(inset, bottom, end, bottom, mLoginBarPaint);
     }
 
     public void removeCurrentAccount(){
@@ -647,6 +656,8 @@ public class mcAccountSpinner extends AppCompatSpinner {
             view.findViewById(R.id.edit_account_button).setVisibility(View.GONE);
             ExtendedTextView closedText = view.findViewById(R.id.account_item);
             closedText.setText(super.getItem(position));
+            closedText.setMaxLines(1);
+            closedText.setEllipsize(android.text.TextUtils.TruncateAt.END);
             ViewGroup.LayoutParams lp = view.getLayoutParams();
             if(lp != null) lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             return view;

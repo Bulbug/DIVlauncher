@@ -372,16 +372,20 @@ public class LauncherActivity extends BaseActivity {
                         android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
                 l = safe.left; t = safe.top; r = safe.right; b = safe.bottom;
             } else {
-                l = insets.getSystemWindowInsetLeft(); t = insets.getSystemWindowInsetTop();
-                r = insets.getSystemWindowInsetRight(); b = insets.getSystemWindowInsetBottom();
+                // Before Android 11 the system insets are "stable" ones: they still include the navigation bar
+                // that is hidden in full screen, which left an empty strip at one edge. Only the cutout counts here.
+                l = 0; t = 0; r = 0; b = 0;
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                     android.view.DisplayCutout cutout = insets.getDisplayCutout();
                     if (cutout != null) {
-                        l = Math.max(l, cutout.getSafeInsetLeft()); t = Math.max(t, cutout.getSafeInsetTop());
-                        r = Math.max(r, cutout.getSafeInsetRight()); b = Math.max(b, cutout.getSafeInsetBottom());
+                        l = cutout.getSafeInsetLeft(); t = cutout.getSafeInsetTop();
+                        r = cutout.getSafeInsetRight(); b = cutout.getSafeInsetBottom();
                     }
                 }
             }
+            // Never waste a wide empty strip beside the camera hole: keep at most a small margin on the sides
+            int maxSide = Math.round(8 * getResources().getDisplayMetrics().density);
+            l = Math.min(l, maxSide); r = Math.min(r, maxSide);
             mInsetLeft = l; mInsetTop = t; mInsetRight = r; mInsetBottom = b;
             applyRootPadding(root);
             return insets;

@@ -105,6 +105,19 @@ Follows the approved preview (labeled icon rail; top bar with profile switcher, 
 - **Editor panels:** `background_control_editor` (used by the side dialog, quick settings and the colour selector) is a rounded `surface_raised` panel with a border; the side dialog title is bold and its Cancel/Confirm buttons use the new dialog button styles.
 - The control buttons themselves (user content), the per-button settings form fields and the colour picker internals are not changed, and no editor logic was touched.
 
+## Step 16: Side margins in full screen (from a phone screenshot)
+- The first real screenshot showed a wide empty strip at the left edge (right edge almost none). Cause: the safe-area padding used the full camera-cutout / "stable" system-bar insets.
+- `setupEdgeToEdge()` now (a) ignores the stable system-bar insets before Android 11 and uses the display cutout only, and (b) caps the left/right safe inset at 8 dp. The background still fills the whole screen; a camera hole may slightly overlap the rail's outer edge but never its icons.
+- If the strip is still there on a given phone, send its model: a toggle "Avoid camera cutout" in Settings is the next step.
+
+## Step 17: Account and profile pills (from the same screenshot)
+- **Account control:** `mcAccountSpinner.init()` no longer replaces the layout's rounded pill with a flat colour. The old full-width accent underline (the login progress bar) is now only drawn while a login is running or after an error, as a thin rounded 3 dp line inside the pill. The closed state is single-line with an ellipsis.
+- **Profile pill:** the arrow is now the same down chevron used by the other dropdowns (the old image pointed up).
+- **Borders:** pills and dropdown fields use a clearer 1.5 dp border (`pill_stroke`, #343B4D) instead of a nearly invisible one.
+
+## Seen in the same screenshot, not fixed yet
+The system font differs from the preview (fonts are not bundled yet); the "More" buttons on Home keep the old look.
+
 ## Not done yet (next steps)
 The in-game HUD/menus and the inner forms of the control-button settings dialog keep their old look. The Performance toggle is planned but not started.
 

@@ -18,6 +18,7 @@
     <color name="background_status_bar">#15171E</color>
     <color name="background_bottom_bar">#15171E</color>
 
+    <color name="pill_stroke">#343B4D</color>
     <color name="tile_mint">#7FD6C2</color>
     <color name="tile_peach">#F2B8A0</color>
     <color name="tile_neutral">#C9D0E4</color>

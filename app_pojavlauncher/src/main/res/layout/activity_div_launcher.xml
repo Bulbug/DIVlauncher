@@ -121,9 +121,9 @@
             android:layout_width="@dimen/shell_profile_pill_width"
             android:layout_height="@dimen/shell_topbar_height"
             android:background="@drawable/account_bar_background"
-            android:drawableEnd="@drawable/spinner_arrow"
+            android:drawableEnd="@drawable/ic_chevron_down"
             app:drawableEndPadding="@dimen/_1sdp"
-            app:drawableEndSize="12dp"
+            app:drawableEndSize="16dp"
             app:drawableStartIntegerScaling="true"
             app:drawableStartSize="28dp" />
 
