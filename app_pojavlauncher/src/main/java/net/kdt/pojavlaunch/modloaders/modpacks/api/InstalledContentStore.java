@@ -28,6 +28,8 @@ public final class InstalledContentStore {
         public String sha1 = "";
         public boolean enabled = true;
         public boolean managed = true;
+        /** "" for normal installs, "performance:<slug>" or "performance-dep" for the Performance pack */
+        public String origin = "";
 
         public Entry() { }
     }

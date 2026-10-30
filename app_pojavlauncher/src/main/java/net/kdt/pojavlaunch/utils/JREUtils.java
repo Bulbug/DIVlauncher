@@ -314,6 +314,13 @@ public class JREUtils {
         // Some phones are not using the right number of cores, fix that
         userArgs.add("-XX:ActiveProcessorCount=" + java.lang.Runtime.getRuntime().availableProcessors());
 
+        // Opt-in performance log: the game bridge (FrameStats in jre_lwjgl3glfw) writes frame statistics to this file
+        if(net.kdt.pojavlaunch.prefs.LauncherPreferences.PREF_BENCHMARK_LOG) {
+            java.io.File benchmarkDir = new java.io.File(net.kdt.pojavlaunch.Tools.DIR_GAME_HOME, "benchmark");
+            benchmarkDir.mkdirs();
+            userArgs.add("-Ddiv.benchmark=" + new java.io.File(benchmarkDir, "frames.csv").getAbsolutePath());
+        }
+
         userArgs.addAll(JVMArgs);
         activity.runOnUiThread(() -> Toast.makeText(activity, activity.getString(R.string.autoram_info_msg,LauncherPreferences.PREF_RAM_ALLOCATION), Toast.LENGTH_SHORT).show());
         System.out.println(JVMArgs);

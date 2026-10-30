@@ -1,4 +1,6 @@
-# DIVlauncher UI redesign v2 - step 1: shell and Home
+# DIVlauncher change log
+
+What changed in the redesign and the features added after it, newest steps last. Older one-off fix reports were removed; the git history keeps them.
 
 Follows the approved preview (labeled icon rail; top bar with profile switcher, Play and account).
 
@@ -117,6 +119,22 @@ Follows the approved preview (labeled icon rail; top bar with profile switcher, 
 
 ## Seen in the same screenshot, not fixed yet
 The system font differs from the preview (fonts are not bundled yet); the "More" buttons on Home keep the old look.
+
+## Step 18: Performance measurement (step 1 of the performance plan)
+- **Settings > Experimental > Performance log** (off by default, `benchmark_log`). When on, the game is started with `-Ddiv.benchmark=<game dir>/benchmark/frames.csv`.
+- **`FrameStats`** (new, in `jre_lwjgl3glfw`, called from `GLFW.glfwSwapBuffers`): counts frames and appends `epoch_ms,avg_fps,low1_fps,max_frame_ms,frames` every 5 seconds. It does nothing at all unless the system property is present.
+- **`DeviceStatsLogger`** (new, started from `MainActivity`): appends `epoch_ms,battery_temp_c,battery_percent,thermal_status` to `benchmark/device.csv` every 5 seconds, so FPS drops can be matched with heat.
+- **`PERFORMANCE_BASELINE.md`**: the exact test procedure (same world, same settings, 3 runs) and a results table.
+- Nothing about rendering or settings is changed yet; this step only observes.
+
+## Step 19: Performance toggle
+Built as previewed, all switches off by default. See `PERFORMANCE_TOGGLE.md` for the behaviour, the mod lists and the limits.
+
+## Step 20: One README
+`UPSTREAM_PojavLauncher_README.md` was removed. Its credits and third-party license list now live in the "Credits and third-party components" section of `README.md`, and the LICENSE file is unchanged. `services/curseforge-proxy/README.md` is kept: it documents the optional CurseForge proxy service.
+
+## Step 21: Tidy the repository
+Fix reports and duplicate READMEs were removed from the project root. The guides moved to `docs/` (account authentication, Ely.by setup, mod downloader, performance baseline, Performance toggle, account data removal) and this file is the single log of what changed.
 
 ## Not done yet (next steps)
 The in-game HUD/menus and the inner forms of the control-button settings dialog keep their old look. The Performance toggle is planned but not started.

@@ -259,6 +259,16 @@ public class ProfilesFragment extends Fragment {
             holder.download.setVisibility(downloaded ? View.GONE : View.VISIBLE);
             holder.download.setOnClickListener(v -> ExtraCore.setValue(ExtraConstants.DOWNLOAD_VERSION, key));
             String tag = loaderTag(profile);
+            // Quick Performance switch (Fabric profiles only); the flag is saved at once
+            boolean perfSupported = net.kdt.pojavlaunch.performance.PerformancePack.isSupported(profile);
+            holder.perfSwitch.setOnCheckedChangeListener(null);
+            holder.perfSwitch.setChecked(perfSupported && profile.perfMods);
+            holder.perfSwitch.setEnabled(perfSupported);
+            holder.perfLabel.setText(perfSupported ? R.string.perf_card_label : R.string.perf_card_label_fabric_only);
+            holder.perfSwitch.setOnCheckedChangeListener((button, checked) -> {
+                profile.perfMods = checked;
+                LauncherProfiles.write();
+            });
             holder.tag.setText(tag);
             holder.tag.setVisibility(tag.isEmpty() ? View.GONE : View.VISIBLE);
             if(!tag.isEmpty()) holder.tag.setBackgroundTintList(ColorStateList.valueOf(tagColor(context, tag)));
@@ -287,6 +297,8 @@ public class ProfilesFragment extends Fragment {
             final ImageButton edit, download;
             final TextView name, version, tag;
             final android.widget.Button select;
+            final androidx.appcompat.widget.SwitchCompat perfSwitch;
+            final TextView perfLabel;
 
             Holder(@NonNull View itemView) {
                 super(itemView);
@@ -297,6 +309,8 @@ public class ProfilesFragment extends Fragment {
                 version = itemView.findViewById(R.id.profile_version);
                 tag = itemView.findViewById(R.id.profile_tag);
                 select = itemView.findViewById(R.id.profile_select);
+                perfSwitch = itemView.findViewById(R.id.profile_perf_switch);
+                perfLabel = itemView.findViewById(R.id.profile_perf_label);
             }
         }
     }

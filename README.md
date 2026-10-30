@@ -4,8 +4,7 @@ DIVlauncher is a Minecraft: Java Edition launcher for Android.
 
 It is based on [PojavLauncher](https://github.com/PojavLauncherTeam/PojavLauncher)
 (by Tran Khanh Duy and the PojavLauncher team), which is in turn based on
-[Boardwalk](https://github.com/zhuowei/Boardwalk). PojavLauncher is discontinued;
-its original README is kept in `UPSTREAM_PojavLauncher_README.md`.
+[Boardwalk](https://github.com/zhuowei/Boardwalk). PojavLauncher is discontinued.
 
 ## Building
 
@@ -55,8 +54,33 @@ Which APK do I download? Almost every modern phone needs **arm64-v8a**. Older 32
    `DIV_KEYSTORE_BASE64` (the text from step 2), `DIV_KEYSTORE_PASSWORD`, `DIV_KEY_ALIAS` (`divlauncher` above) and `DIV_KEY_PASSWORD`.
 4. Push. APKs are named `DIVlauncher-<abi>-release.apk` and are now signed with your key. Release builds install next to debug builds as a separate app. **Switching from the shared test key to your own key later means users must uninstall and reinstall once**, so set the secrets before you share the app widely.
 
+## Documentation
+
+Guides are in the [`docs`](docs) folder:
+- [Change log](docs/CHANGELOG.md): what changed in the redesign and the features after it
+- [Account authentication](docs/ACCOUNT_AUTHENTICATION.md) and [Ely.by browser sign-in setup](docs/ELYBY_BROWSER_OAUTH_SETUP.md)
+- [Mod downloader](docs/MOD_DOWNLOADER.md)
+- [Performance toggle](docs/PERFORMANCE_TOGGLE.md) and [performance baseline test](docs/PERFORMANCE_BASELINE.md)
+- [Removing account data](docs/dataremoval.md)
+
 ## License
 
 DIVlauncher is licensed under the [GNU LGPLv3](LICENSE), the same license as PojavLauncher.
 The `LICENSE` file and the upstream copyright notices must stay in the repo.
-Third-party components and their licenses are listed in `UPSTREAM_PojavLauncher_README.md`.
+The components below are used under their own licenses.
+
+## Credits and third-party components
+
+* [Boardwalk](https://github.com/zhuowei/Boardwalk) (JVM launcher): unknown license / [Apache License 2.0](https://github.com/zhuowei/Boardwalk/blob/master/LICENSE) or GNU GPLv2.
+* Android Support Libraries: [Apache License 2.0](https://android.googlesource.com/platform/prebuilts/maven_repo/android/+/master/NOTICE.txt).
+* [GL4ES](https://github.com/PojavLauncherTeam/gl4es): [MIT License](https://github.com/ptitSeb/gl4es/blob/master/LICENSE).
+* [OpenJDK](https://github.com/PojavLauncherTeam/openjdk-multiarch-jdk8u): [GNU GPLv2 License](https://openjdk.java.net/legal/gplv2+ce.html).
+* [LWJGL3](https://github.com/PojavLauncherTeam/lwjgl3): [BSD-3 License](https://github.com/LWJGL/lwjgl3/blob/master/LICENSE.md).
+* [LWJGLX](https://github.com/PojavLauncherTeam/lwjglx) (LWJGL2 API compatibility layer for LWJGL3): unknown license.
+* [Mesa 3D Graphics Library](https://gitlab.freedesktop.org/mesa/mesa): [MIT License](https://docs.mesa3d.org/license.html).
+* [pro-grade](https://github.com/pro-grade/pro-grade) (Java sandboxing security manager): [Apache License 2.0](https://github.com/pro-grade/pro-grade/blob/master/LICENSE.txt).
+* [bhook](https://github.com/bytedance/bhook) (exit code trapping): [MIT license](https://github.com/bytedance/bhook/blob/main/LICENSE).
+* [libepoxy](https://github.com/anholt/libepoxy): [MIT License](https://github.com/anholt/libepoxy/blob/master/COPYING).
+* [virglrenderer](https://github.com/PojavLauncherTeam/virglrenderer): [MIT License](https://gitlab.freedesktop.org/virgl/virglrenderer/-/blob/master/COPYING).
+* Thanks to [MCHeads](https://mc-heads.net) for providing Minecraft avatars.
+

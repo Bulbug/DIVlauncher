@@ -191,6 +191,49 @@ public class ModrinthApi implements ModpackApi {
                 url, fileName, algorithm, hash);
     }
 
+    public static final int PERF_INSTALLED = 0;
+    public static final int PERF_NOT_AVAILABLE = 1;
+
+    /**
+     * Performance pack: installs the newest release of a project (given by its Modrinth slug) that fits the
+     * game version and loader, together with its required dependencies.
+     * @param outProjectId receives the Modrinth project id when something was found
+     * @return PERF_INSTALLED, or PERF_NOT_AVAILABLE when the project has no matching release
+     */
+    public int installLatestRelease(File gameDirectory, String slug, String gameVersion, String loader,
+                                    String[] outProjectId) throws IOException {
+        JsonObject project = mApiHandler.get("project/" + urlSegment(slug), JsonObject.class);
+        if (project == null) return PERF_NOT_AVAILABLE;
+        String projectId = stringOr(project, "id", "");
+        if (projectId.isEmpty()) return PERF_NOT_AVAILABLE;
+        String versionId = findCompatibleReleaseVersionId(projectId, gameVersion, loader);
+        if (versionId == null) return PERF_NOT_AVAILABLE;
+        if (outProjectId != null && outProjectId.length > 0) outProjectId[0] = projectId;
+        installVersionRecursive(gameDirectory, "mod", projectId, stringOr(project, "title", slug),
+                versionId, gameVersion, loader, new HashSet<>(), 0);
+        return PERF_INSTALLED;
+    }
+
+    /** Like findCompatibleVersionId but prefers a release, accepts a beta if there is none, and never an alpha */
+    private String findCompatibleReleaseVersionId(String projectId, String gameVersion, String loader) {
+        HashMap<String, Object> params = new HashMap<>();
+        if (notEmpty(gameVersion)) params.put("game_versions", "[\"" + jsonSafe(gameVersion) + "\"]");
+        if (notEmpty(loader) && !"minecraft".equals(loader)) params.put("loaders", "[\"" + jsonSafe(loader) + "\"]");
+        JsonArray versions = mApiHandler.get("project/" + urlSegment(projectId) + "/version", params, JsonArray.class);
+        if (versions == null) return null;
+        String beta = null;
+        for (JsonElement element : versions) {
+            if (!element.isJsonObject()) continue;
+            JsonObject version = element.getAsJsonObject();
+            String id = stringOr(version, "id", "");
+            if (id.isEmpty()) continue;
+            String type = stringOr(version, "version_type", "release");
+            if ("release".equals(type)) return id;
+            if ("beta".equals(type) && beta == null) beta = id;
+        }
+        return beta;
+    }
+
     private String findCompatibleVersionId(String projectId, String gameVersion, String loader) {
         HashMap<String, Object> params = new HashMap<>();
         if (notEmpty(gameVersion)) params.put("game_versions", "[\"" + jsonSafe(gameVersion) + "\"]");

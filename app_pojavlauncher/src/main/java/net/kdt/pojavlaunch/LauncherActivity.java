@@ -289,12 +289,18 @@ public class LauncherActivity extends BaseActivity {
             }
         }
 
-        new MinecraftDownloader().start(
+        final Runnable startDownload = () -> new MinecraftDownloader().start(
                 this,
                 mcVersion,
                 normalizedVersionId,
                 new ContextAwareDoneListener(this, normalizedVersionId)
         );
+        // Performance pack: add or remove the optimisation mods of this profile before the game starts
+        if (net.kdt.pojavlaunch.performance.PerformancePack.hasWork(prof)) {
+            net.kdt.pojavlaunch.performance.PerformancePack.syncThenRun(this, prof, startDownload);
+        } else {
+            startDownload.run();
+        }
         return false;
     };
 

@@ -8,6 +8,12 @@
             android:title="@string/preference_shader_dump_title"
             android:summary="@string/preference_shader_dump_description"
             />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="benchmark_log"
+            android:title="@string/preference_benchmark_title"
+            android:summary="@string/preference_benchmark_description"
+            />
         <SwitchPreference
             android:defaultValue="false"
             android:key="bigCoreAffinity"

@@ -49,6 +49,9 @@ public class ProfileEditorFragment extends Fragment implements CropperUtils.Crop
 
     private String mProfileKey;
     private MinecraftProfile mTempProfile = null;
+    private androidx.appcompat.widget.SwitchCompat mPerfMain, mPerfExperimental, mPerfAdvanced;
+    private View mPerfSection;
+    private TextView mPerfUnsupported;
     private String mValueToConsume = "";
     private Button mSaveButton, mDeleteButton, mControlSelectButton, mGameDirButton, mVersionSelectButton;
     private Spinner mDefaultRuntime, mDefaultRenderer;
@@ -158,6 +161,7 @@ public class ProfileEditorFragment extends Fragment implements CropperUtils.Crop
         return v -> VersionSelectorDialog.open(v.getContext(), false, (id, snapshot)-> {
             mTempProfile.lastVersionId = id;
             mDefaultVersion.setText(id);
+            updatePerformanceSwitches();
         });
     }
 
@@ -191,6 +195,10 @@ public class ProfileEditorFragment extends Fragment implements CropperUtils.Crop
         mDefaultRenderer.setSelection(rendererIndex);
 
         mDefaultVersion.setText(mTempProfile.lastVersionId);
+        mPerfMain.setChecked(mTempProfile.perfMods);
+        mPerfExperimental.setChecked(mTempProfile.perfExperimental);
+        mPerfAdvanced.setChecked(mTempProfile.perfAdvanced);
+        updatePerformanceSwitches();
         mDefaultJvmArgument.setText(mTempProfile.javaArgs == null ? "" : mTempProfile.javaArgs);
         mDefaultName.setText(mTempProfile.name);
         mDefaultPath.setText(mTempProfile.gameDir == null ? "" : mTempProfile.gameDir);
@@ -221,7 +229,22 @@ public class ProfileEditorFragment extends Fragment implements CropperUtils.Crop
     }
 
 
+    /** The Performance pack only works for Fabric profiles: grey the switches out otherwise */
+    private void updatePerformanceSwitches() {
+        boolean supported = net.kdt.pojavlaunch.performance.PerformancePack.isSupported(mTempProfile);
+        mPerfMain.setEnabled(supported);
+        mPerfExperimental.setEnabled(supported);
+        mPerfAdvanced.setEnabled(supported);
+        mPerfSection.setAlpha(supported ? 1f : 0.5f);
+        mPerfUnsupported.setVisibility(supported ? View.GONE : View.VISIBLE);
+    }
+
     private void bindViews(@NonNull View view){
+        mPerfSection = view.findViewById(R.id.vprof_editor_perf_section);
+        mPerfUnsupported = view.findViewById(R.id.vprof_editor_perf_unsupported);
+        mPerfMain = view.findViewById(R.id.vprof_editor_perf_main);
+        mPerfExperimental = view.findViewById(R.id.vprof_editor_perf_experimental);
+        mPerfAdvanced = view.findViewById(R.id.vprof_editor_perf_advanced);
         mDefaultControl = view.findViewById(R.id.vprof_editor_ctrl_spinner);
         mDefaultRuntime = view.findViewById(R.id.vprof_editor_spinner_runtime);
         mDefaultRenderer = view.findViewById(R.id.vprof_editor_profile_renderer);
@@ -246,6 +269,9 @@ public class ProfileEditorFragment extends Fragment implements CropperUtils.Crop
         mTempProfile.name = mDefaultName.getText().toString();
         mTempProfile.javaArgs = mDefaultJvmArgument.getText().toString();
         mTempProfile.gameDir = mDefaultPath.getText().toString();
+        mTempProfile.perfMods = mPerfMain.isChecked();
+        mTempProfile.perfExperimental = mPerfExperimental.isChecked();
+        mTempProfile.perfAdvanced = mPerfAdvanced.isChecked();
 
         if(mTempProfile.controlFile.isEmpty()) mTempProfile.controlFile = null;
         if(mTempProfile.javaArgs.isEmpty()) mTempProfile.javaArgs = null;

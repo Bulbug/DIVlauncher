@@ -22,6 +22,10 @@ public class MinecraftProfile {
 	public String pojavRendererName;
 	public String controlFile;
 	public MinecraftResolution[] resolution;
+	// Performance pack switches (all off by default), see net.kdt.pojavlaunch.performance.PerformancePack
+	public boolean perfMods;
+	public boolean perfExperimental;
+	public boolean perfAdvanced;
 
 
 	public static MinecraftProfile createTemplate(){
@@ -55,5 +59,8 @@ public class MinecraftProfile {
 		pojavRendererName = profile.pojavRendererName;
 		controlFile = profile.controlFile;
 		resolution = profile.resolution;
+		perfMods = profile.perfMods;
+		perfExperimental = profile.perfExperimental;
+		perfAdvanced = profile.perfAdvanced;
 	}
 }
