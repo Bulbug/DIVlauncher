@@ -97,6 +97,9 @@ jobs:
         with:
           gradle-version: "8.13"  # keep equal to gradle/wrapper/gradle-wrapper.properties
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
       - name: Build APK
         run: ./gradlew assembleDebug
 
