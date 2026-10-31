@@ -136,6 +136,11 @@ Built as previewed, all switches off by default. See `PERFORMANCE_TOGGLE.md` for
 ## Step 21: Tidy the repository
 Fix reports and duplicate READMEs were removed from the project root. The guides moved to `docs/` (account authentication, Ely.by setup, mod downloader, performance baseline, Performance toggle, account data removal) and this file is the single log of what changed.
 
+## Step 22: Build fixes found by the first real CI run
+- `RTSpinnerAdapter` had two `getDropDownView` methods after the dropdown restyle (the original one was left in by mistake); the old one was removed.
+- `.github/workflows/android.yml` had two `env:` blocks in the build job (release flag and CurseForge proxy URL); they are now one block.
+- A GitHub AI "refactor" had also replaced the build and release steps with a plain debug build; the release flow (release variant named "DIVlauncher", signing, Latest release `DIVlauncher-v<version>`) was restored on top of those two fixes.
+
 ## Not done yet (next steps)
 The in-game HUD/menus and the inner forms of the control-button settings dialog keep their old look. The Performance toggle is planned but not started.
 
