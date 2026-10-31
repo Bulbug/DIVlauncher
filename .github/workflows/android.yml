@@ -70,25 +70,34 @@ jobs:
           set -e
           mkdir -p dl runtimes
 
-          for v in 8 17 21; do
+          for v in 8 17 21 25; do
             for a in arm arm64 x86 x86_64; do
-              curl -fL --retry 5 -o "dl/jre$v-$a.tar.xz" \
-                "$JRE_RELEASES/download_jre$v/jre$v-android-$a.tar.xz"
+              # Java 25 is not built for 32-bit x86 upstream; skip anything that does not exist
+              if ! curl -fL --retry 5 -o "dl/jre$v-$a.tar.xz" \
+                  "$JRE_RELEASES/download_jre$v/jre$v-android-$a.tar.xz"; then
+                if [ "$v" = "25" ]; then
+                  echo "::warning::No Java 25 build for $a, skipping it"
+                  rm -f "dl/jre$v-$a.tar.xz"
+                else
+                  exit 1
+                fi
+              fi
             done
           done
 
           repack() {
+            args=()
+            for a in arm arm64 x86 x86_64; do
+              if [ -f "dl/jre$1-$a.tar.xz" ]; then args+=("$a=dl/jre$1-$a.tar.xz"); fi
+            done
             python3 scripts/repack_jre.py "runtimes/$2" "div-jre$1-$JRE_REV" \
-              arm="dl/jre$1-arm.tar.xz" \
-              arm64="dl/jre$1-arm64.tar.xz" \
-              x86="dl/jre$1-x86.tar.xz" \
-              x86_64="dl/jre$1-x86_64.tar.xz" \
-              --only-arch "${{ matrix.arch }}"
+              "${args[@]}" --only-arch "${{ matrix.arch }}"
           }
 
           repack 8 jre
           repack 17 jre-new
           repack 21 jre-21
+          repack 25 jre-25
 
       - name: Install Java runtimes into the app
         run: |

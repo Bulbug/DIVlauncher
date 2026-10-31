@@ -141,6 +141,12 @@ Fix reports and duplicate READMEs were removed from the project root. The guides
 - `.github/workflows/android.yml` had two `env:` blocks in the build job (release flag and CurseForge proxy URL); they are now one block.
 - A GitHub AI "refactor" had also replaced the build and release steps with a plain debug build; the release flow (release variant named "DIVlauncher", signing, Latest release `DIVlauncher-v<version>`) was restored on top of those two fixes.
 
+## Step 23: Java 25 runtime
+- CI now downloads and repacks Java 25 next to 8, 17 and 21 (`components/jre-25`); `NewJREUtil` registers it as `Internal-25`, so games that ask for Java 25 get it automatically.
+- Upstream has no Java 25 build for 32-bit x86, so the x86 APK ships without it. `scripts/repack_jre.py` now accepts a missing architecture and the workflow skips it with a warning.
+- The bundled Java 17, 21 and 25 runtimes are now unpacked in the background at app start (`AsyncAssetManager.unpackInternalRuntimes`, `NewJREUtil.unpackAllInternalRuntimes`), so they appear as Internal-17 / Internal-21 / Internal-25 in the Runtime Manager right away. Up-to-date ones are skipped on later starts. First start uses more storage and takes a bit longer.
+- Not tested: no Gradle build or on-device run was possible here. Check that a Java 25 game starts on an arm64 phone.
+
 ## Not done yet (next steps)
 The in-game HUD/menus and the inner forms of the control-button settings dialog keep their old look. The Performance toggle is planned but not started.
 

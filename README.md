@@ -10,7 +10,7 @@ It is based on [PojavLauncher](https://github.com/PojavLauncherTeam/PojavLaunche
 
 1. Builds are produced by GitHub Actions (`.github/workflows/android.yml`),
    one APK per CPU architecture. The workflow downloads a pinned, checksum-verified LTW release and the
-   Java 8, 17 and 21 runtimes (from the AngelAuraMC OpenJDK builds) and repacks them with
+   Java 8, 17, 21 and 25 runtimes (from the AngelAuraMC OpenJDK builds) and repacks them with
    `scripts/repack_jre.py`; none of that is stored in this repo.
 2. **The NDK is still required.** Third-party native libraries (LWJGL, OpenAL, gl4es, OSMesa, ...) are
    prebuilt in `jniLibs`, but DIVlauncher's own native bridge (`pojavexec`, `exithook`, `linkerhook`,

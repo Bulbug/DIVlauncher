@@ -48,6 +48,23 @@ public class NewJREUtil {
         }
     }
 
+    /**
+     * Unpacks every bundled internal runtime (17, 21, 25) that is missing or outdated, so that they
+     * show up in the Runtime Manager right after the first start instead of only when a game needs them.
+     * Must be called off the UI thread. Runtimes not included in this APK (for example Java 25 on 32-bit x86) are skipped.
+     */
+    public static void unpackAllInternalRuntimes(AssetManager assetManager) {
+        for(InternalRuntime internalRuntime : InternalRuntime.values()) {
+            try {
+                String bundled = Tools.read(assetManager.open(internalRuntime.path+"/version"));
+                String installed = MultiRTUtils.readInternalRuntimeVersion(internalRuntime.name);
+                if(!bundled.equals(installed)) unpackInternalRuntime(assetManager, internalRuntime, bundled);
+            }catch (IOException e) {
+                Log.i("NewJREAuto", internalRuntime.name+" is not included in this APK, skipping");
+            }
+        }
+    }
+
     private static InternalRuntime getInternalRuntime(Runtime runtime) {
         for(InternalRuntime internalRuntime : InternalRuntime.values()) {
             if(internalRuntime.name.equals(runtime.name)) return internalRuntime;
@@ -143,7 +160,8 @@ public class NewJREUtil {
 
     private enum InternalRuntime {
         JRE_17(17, "Internal-17", "components/jre-new"),
-        JRE_21(21, "Internal-21", "components/jre-21");
+        JRE_21(21, "Internal-21", "components/jre-21"),
+        JRE_25(25, "Internal-25", "components/jre-25");
         public final int majorVersion;
         public final String name;
         public final String path;

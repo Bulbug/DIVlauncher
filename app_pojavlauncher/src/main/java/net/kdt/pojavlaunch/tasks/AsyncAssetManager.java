@@ -10,6 +10,7 @@ import android.util.Log;
 
 import com.kdt.mcgui.ProgressLayout;
 
+import net.kdt.pojavlaunch.NewJREUtil;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.multirt.MultiRTUtils;
 
@@ -56,6 +57,15 @@ public class AsyncAssetManager {
                 Log.e("JREAuto", "Internal JRE unpack failed", e);
             }
         });
+    }
+
+    /**
+     * Unpack the bundled Java 17, 21 and 25 runtimes in the background, so they are listed in the Runtime Manager
+     * right away. Missing or outdated ones are installed; up-to-date ones are left alone.
+     * @param am App context
+     */
+    public static void unpackInternalRuntimes(AssetManager am) {
+        sExecutorService.execute(() -> NewJREUtil.unpackAllInternalRuntimes(am));
     }
 
     /** Unpack single files, with no regard to version tracking */
