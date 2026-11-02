@@ -1,6 +1,6 @@
 'use strict';
 /* DIVlauncher for Windows: window logic. Talks to the Rust side through Tauri commands
-   (app_info, list_versions, offline_uuid, load_state, save_state). In a plain browser it uses small stand-ins,
+   (app_info, list_versions, offline_uuid, load_state, save_state, install_version). In a plain browser it uses small stand-ins,
    so the window can be previewed without building the app. */
 
 const tauri = window.__TAURI__ && window.__TAURI__.core;
@@ -20,6 +20,9 @@ function mock(cmd, args) {
         : Promise.reject('A username needs 3 to 16 letters, numbers or underscores.');
     case 'load_state': return Promise.resolve(localStorage.getItem('div-state') || '{}');
     case 'save_state': localStorage.setItem('div-state', args.json); return Promise.resolve();
+    case 'install_version': return Promise.resolve({ version: args.version, directory: '(browser preview)', files_downloaded: 0, assets_downloaded: 0, preview: true });
+    case 'is_version_installed': return Promise.resolve(false);
+    case 'launch_version': return Promise.resolve({ version: args.version, pid: 0, log_file: '(browser preview)', java: '(browser preview)', preview: true });
     default: return Promise.reject('unknown command ' + cmd);
   }
 }
@@ -236,6 +239,7 @@ function render() {
   document.querySelectorAll('.nav').forEach((n) => n.classList.toggle('on', n.dataset.screen === screen));
   renderTopbar();
   $('content').replaceChildren(build());
+  refreshPlayButton();
 }
 
 /* ---------- start ---------- */
@@ -250,9 +254,78 @@ $('account-pill').addEventListener('click', (e) => { e.stopPropagation(); if (st
 document.addEventListener('click', (e) => { if (!e.target.closest('.popup')) closePopups(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePopups(); closeDialog(); } });
 $('scrim').addEventListener('mousedown', (e) => { if (e.target === $('scrim')) closeDialog(); });
-$('play').addEventListener('click', () => {
-  if (!state.account) { addAccountDialog(); return; }
-  toast('Starting the game is the next step of the Windows build. This version sets up accounts, profiles and the version list.');
+let installing = false;
+let actionCheck = 0;
+async function selectedVersionId() {
+  const p = currentProfile();
+  if (!p) return null;
+  if (p.version === 'latest-release') {
+    versions = versions || await invoke('list_versions');
+    return versions.latest_release;
+  }
+  return p.version;
+}
+async function refreshPlayButton() {
+  const check = ++actionCheck;
+  const button = $('play');
+  if (installing) return;
+  try {
+    const version = await selectedVersionId();
+    if (check !== actionCheck || installing) return;
+    if (!version) { button.textContent = 'Install'; return; }
+    const installed = await invoke('is_version_installed', { version });
+    if (check !== actionCheck || installing) return;
+    button.textContent = installed ? 'Play' : 'Install';
+    button.title = installed ? 'Launch this installed Minecraft version' : 'Download this Minecraft version';
+  } catch (_) {
+    if (check === actionCheck && !installing) button.textContent = 'Install';
+  }
+}
+$('play').addEventListener('click', async () => {
+  if (installing) return;
+  const p = currentProfile();
+  if (!p) { toast('Create a profile before installing Minecraft.'); return; }
+  let version;
+  try { version = await selectedVersionId(); }
+  catch (e) { toast('Could not resolve the selected Minecraft version: ' + e); return; }
+  if (!version) { toast('Choose a Minecraft version first.'); return; }
+
+  installing = true;
+  const button = $('play');
+  button.disabled = true;
+  button.textContent = 'Checking…';
+  try {
+    const installed = await invoke('is_version_installed', { version });
+    if (!installed) {
+      button.textContent = 'Installing…';
+      toast('Preparing Minecraft ' + version + '. The first download may take a while.');
+      const result = await invoke('install_version', { version });
+      if (result.preview) {
+        toast('Browser preview only: installation runs in the Windows app.');
+      } else {
+        toast('Installed Minecraft ' + result.version + ' (' + result.files_downloaded + ' new files; ' + result.assets_downloaded + ' assets). Add/select an offline account, then press Play.');
+      }
+      return;
+    }
+
+    const account = state.accounts.find((a) => a.name === state.account);
+    if (!account) {
+      toast('Minecraft is installed. Add an offline account before pressing Play.');
+      closePopups();
+      addAccountDialog();
+      return;
+    }
+    button.textContent = 'Launching…';
+    const result = await invoke('launch_version', { version, username: account.name });
+    if (result.preview) toast('Browser preview only: Minecraft launches from the Windows app.');
+    else toast('Minecraft ' + result.version + ' started (PID ' + result.pid + '). Log: ' + result.log_file);
+  } catch (e) {
+    toast('Could not continue: ' + e);
+  } finally {
+    installing = false;
+    button.disabled = false;
+    await refreshPlayButton();
+  }
 });
 
 (async function start() {

@@ -40,7 +40,19 @@ To check the window in a normal browser, open `desktop/ui/index.html`; it uses s
 - Microsoft account sign-in needs an app registration and is planned for a later phase; offline accounts work now.
 
 ## Next phases
-1. Download the game and libraries, bundled Java, launch vanilla.
-2. Ely.by and Microsoft sign-in, Fabric, mod browser, Performance toggle.
-3. Forge, NeoForge, Quilt, modpacks.
-4. Auto-update, uninstaller polish, crash reports.
+1. Package/manage a compatible Java runtime automatically and add granular download progress.
+2. Verify Windows runtime behavior across supported vanilla versions; improve process tracking and crash diagnostics.
+3. Microsoft sign-in and secure session storage.
+4. Fabric, Forge, NeoForge, Quilt, mod browser and modpacks.
+5. Auto-update, uninstaller polish, and release hardening.
+
+## Windows support update: vanilla installer and initial launch
+
+The Windows UI's primary action switches between **Install** and **Play**. It resolves `Latest release` to Mojang's current release and invokes `install_version` in the Tauri backend. The installer downloads the selected version JSON, client JAR, applicable Windows library artifacts/native classifiers, and asset index/object files into the launcher's app-data `.minecraft` directory. Existing files are reused when their hashes match; new downloads are checked against published SHA-1 values when available, written to a temporary file, and then renamed into place. Download URLs must use HTTPS and library artifact paths are checked for traversal.
+
+The **Play** action is an initial vanilla launcher implementation. It uses a Java runtime already installed on the PC (`JAVA_HOME` or `PATH`), checks the Java major version against the version metadata, extracts native libraries, constructs metadata-driven JVM/game arguments, and launches Minecraft with output redirected to a per-version log under `.minecraft/logs/`. If no compatible Java runtime is available, the launcher reports an actionable error instead of installing Java automatically.
+
+**Known limits:** automatic Java runtime acquisition, live download progress, Microsoft authentication, inherited/mod-loader profiles, advanced process lifecycle controls, and some legacy metadata edge cases remain future work. Offline accounts are suitable only for offline/local play and do not authenticate ownership or permit access to servers requiring authenticated accounts. A successful file download alone is not proof that a game launches correctly.
+
+### Verifying this update
+From `desktop`, run `cargo test -p divcore`. Then from `desktop/src-tauri`, run `cargo tauri dev`. Select or create a vanilla profile and press **Install**. After installation, add/select an offline account and press **Play**. For `Latest release`, the app resolves Mojang's current release. The first install can download a substantial amount of data. Check `%APPDATA%\\com.divlauncher.desktop\\.minecraft` for the resulting `versions`, `libraries`, `assets`, and `logs` folders. Build and runtime verification must be performed on Windows; static inspection in another environment is not a substitute.
