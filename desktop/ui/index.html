@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIVlauncher</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Main">
+    <div class="logo">D</div>
+    <button class="nav" data-screen="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button class="nav" data-screen="profiles"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>Profiles</button>
+    <button class="nav" data-screen="mods"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Mods</button>
+    <span class="grow"></span>
+    <button class="nav" data-screen="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Settings</button>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <h1 id="title">Home</h1>
+      <div class="pop-anchor">
+        <button class="pill" id="profile-pill" aria-haspopup="listbox"><i class="sq" id="profile-sq"></i><span><b id="profile-name">Profile</b><small id="profile-version"></small></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
+        <div class="popup" id="profile-popup" hidden></div>
+      </div>
+      <button class="play" id="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>Play</button>
+      <div class="pop-anchor">
+        <button class="pill account" id="account-pill" aria-haspopup="listbox"><s id="account-avatar">?</s><span><b id="account-name">Add account</b></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
+        <div class="popup right" id="account-popup" hidden></div>
+      </div>
+    </header>
+    <main id="content"></main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden><div class="dialog" id="dialog" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<ListView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/list_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:scrollbars="vertical"
+    android:fadeScrollbars="false"
+    android:scrollbarThumbVertical="@color/minebutton_color"
+    android:paddingVertical="@dimen/_6sdp"
+    android:scrollbarSize="@dimen/padding_medium"
+    android:background="@drawable/popup_background"
+    android:clipToOutline="true"
+    android:clipToPadding="false"
+    android:divider="@null" />

@@ -1,0 +1,429 @@
+
+name: DIVlauncher CI
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  push:
+    branches: ['**']
+    tags: ['v*', 'DIVlauncher-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  JRE_REV: "20260404-1"
+  JRE_RELEASES: "https://github.com/AngelAuraMC/angelauramc-openjdk-build/releases/download"
+
+jobs:
+  version:
+    name: Work out the version
+    runs-on: ubuntu-22.04
+
+    # one at a time, so two quick pushes can never claim the same number
+    concurrency:
+      group: version-bump
+      cancel-in-progress: false
+
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+      reserved: ${{ steps.next.outputs.reserved }}
+
+    steps:
+      - name: Check out (tags and history, to find the last release)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Pushes to the default branch get the next version automatically:
+      #   small change (default)          1.0.1 -> 1.0.2
+      #   big change ("[big]" in a commit message of the push)   1.0.1 -> 2.0.0
+      # divVersion in gradle.properties is a floor: raise it to jump ahead (for example to 3.0.0).
+      # A pushed tag such as DIVlauncher-v1.2.0 uses that version as it is. Other builds get no version here.
+      - name: Next version
+        id: next
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          reserved=false
+          version=""
+          tag=""
+
+          next_from() {
+            local a b c
+            IFS=. read -r a b c <<< "$1"
+            if [ "$2" = "big" ]; then echo "$((a + 1)).0.0"; else echo "${a}.${b}.$((c + 1))"; fi
+          }
+
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            version="${GITHUB_REF_NAME#DIVlauncher-}"
+            version="${version#[vV]}"
+            tag="$GITHUB_REF_NAME"
+          elif [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" = "$DEFAULT_BRANCH" ]; then
+            base="$(grep '^divVersion=' gradle.properties | cut -d= -f2 | tr -d '\r[:space:]')"
+            last="$(git tag --list 'DIVlauncher-v*' | sed 's/^DIVlauncher-v//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
+
+            if [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+              messages="$(git log --format=%B "$BEFORE..$GITHUB_SHA")"
+            else
+              messages="$(git log -1 --format=%B "$GITHUB_SHA")"
+            fi
+            if printf '%s' "$messages" | grep -qi '\[big\]'; then kind=big; else kind=small; fi
+
+            if [ -z "$last" ]; then candidate="$base"; else candidate="$(next_from "$last" "$kind")"; fi
+            version="$(printf '%s\n%s\n' "$candidate" "$base" | sort -V | tail -n 1)"
+
+            # Reserve the tag now (a tag created with the workflow token does not start another run)
+            for attempt in 1 2 3 4 5; do
+              tag="DIVlauncher-v${version}"
+              if gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/${tag}" -f sha="$GITHUB_SHA" > /dev/null 2>&1; then
+                reserved=true
+                break
+              fi
+              version="$(next_from "$version" small)"
+            done
+            if [ "$reserved" != "true" ]; then
+              echo "::error::Could not reserve a version tag"
+              exit 1
+            fi
+            echo "Change size: $kind. Last release: ${last:-none}. New version: $version"
+          else
+            echo "Not a release build: no version is assigned."
+          fi
+
+          {
+            echo "version=$version"
+            echo "tag=$tag"
+            echo "reserved=$reserved"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.abi }}
+    needs: version
+    runs-on: ubuntu-22.04
+
+    env:
+      DIV_RELEASE_BUILD: ${{ (github.ref_type == 'tag' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && 'true' || 'false' }}
+      CURSEFORGE_PROXY_BASE_URL: ${{ vars.CURSEFORGE_PROXY_BASE_URL }}
+      # Version of a published build (empty for other builds); read by app_pojavlauncher/build.gradle
+      DIV_VERSION: ${{ needs.version.outputs.version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { abi: arm64-v8a, arch: arm64 }
+          - { abi: armeabi-v7a, arch: arm }
+          - { abi: x86_64, arch: x86_64 }
+          - { abi: x86, arch: x86 }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Get LTW (pinned)
+        env:
+          LTW_TAG: "7703f1c"
+          LTW_SHA256: "5640b2aecd99a3ad174bfbd959c4bf30bf1f57139f7ba9b5d62cb621ff55322a"
+        run: |
+          mkdir -p app_pojavlauncher/libs
+          curl -fL --retry 5 -o app_pojavlauncher/libs/ltw-release.aar \
+            "https://github.com/PojavLauncherTeam/LTW/releases/download/${LTW_TAG}/ltw-release.aar"
+          echo "${LTW_SHA256}  app_pojavlauncher/libs/ltw-release.aar" | sha256sum -c -
+
+      - name: Cache Java runtimes
+        id: jre-cache
+        uses: actions/cache@v4
+        with:
+          path: runtimes
+          key: jre-${{ env.JRE_REV }}-${{ matrix.arch }}-${{ hashFiles('scripts/repack_jre.py') }}
+
+      - name: Download and repack Java runtimes
+        if: steps.jre-cache.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          mkdir -p dl runtimes
+
+          for v in 8 17 21 25; do
+            for a in arm arm64 x86 x86_64; do
+              # Java 25 is not built for 32-bit x86 upstream; skip anything that does not exist
+              if ! curl -fL --retry 5 -o "dl/jre$v-$a.tar.xz" \
+                  "$JRE_RELEASES/download_jre$v/jre$v-android-$a.tar.xz"; then
+                if [ "$v" = "25" ]; then
+                  echo "::warning::No Java 25 build for $a, skipping it"
+                  rm -f "dl/jre$v-$a.tar.xz"
+                else
+                  exit 1
+                fi
+              fi
+            done
+          done
+
+          repack() {
+            args=()
+            for a in arm arm64 x86 x86_64; do
+              if [ -f "dl/jre$1-$a.tar.xz" ]; then args+=("$a=dl/jre$1-$a.tar.xz"); fi
+            done
+            python3 scripts/repack_jre.py "runtimes/$2" "div-jre$1-$JRE_REV" \
+              "${args[@]}" --only-arch "${{ matrix.arch }}"
+          }
+
+          repack 8 jre
+          repack 17 jre-new
+          repack 21 jre-21
+          repack 25 jre-25
+
+      - name: Install Java runtimes into the app
+        run: |
+          mkdir -p app_pojavlauncher/src/main/assets/components
+          cp -r runtimes/. app_pojavlauncher/src/main/assets/components/
+          ls -lh app_pojavlauncher/src/main/assets/components/*
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Build JRE JAR files
+        run: |
+          chmod +x ./scripts/languagelist_updater.sh
+          ./scripts/languagelist_updater.sh
+          mkdir -p out
+          ./gradlew :jre_lwjgl3glfw:build --no-daemon
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android NDK and SDK pieces
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+
+          echo y | "$SDKMANAGER" --install \
+            "ndk;25.2.9519653" \
+            "build-tools;34.0.0" \
+            "platforms;android-34" > /dev/null
+
+          ls "$ANDROID_HOME/ndk"
+
+      - name: Check for release signing key
+        id: signing
+        env:
+          KEYSTORE_B64: ${{ secrets.DIV_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/divlauncher-release.jks"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No DIV_KEYSTORE_BASE64 secret found, using the shared test key."
+          fi
+
+      - name: Build release APK (signed)
+        if: steps.signing.outputs.release == 'true'
+        env:
+          DIV_KEYSTORE_FILE: ${{ runner.temp }}/divlauncher-release.jks
+          DIV_KEYSTORE_PASSWORD: ${{ secrets.DIV_KEYSTORE_PASSWORD }}
+          DIV_KEY_ALIAS: ${{ secrets.DIV_KEY_ALIAS }}
+          DIV_KEY_PASSWORD: ${{ secrets.DIV_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app_pojavlauncher:assembleRelease -PdivAbi=${{ matrix.abi }}
+
+          APK="out/DIVlauncher-${{ matrix.abi }}-release.apk"
+
+          mv app_pojavlauncher/build/outputs/apk/release/app_pojavlauncher-release.apk "$APK"
+
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+
+          "$APKSIGNER" verify --print-certs "$APK"
+
+          (cd out && sha256sum "$(basename "$APK")" > "$(basename "$APK" .apk).sha256")
+
+          rm -f "$RUNNER_TEMP/divlauncher-release.jks"
+
+          ls -lh out
+
+      - name: Build release APK (shared test key)
+        if: steps.signing.outputs.release != 'true'
+        run: |
+          ./gradlew :app_pojavlauncher:assembleRelease -PdivAbi=${{ matrix.abi }}
+
+          APK="out/DIVlauncher-${{ matrix.abi }}-release.apk"
+
+          mv app_pojavlauncher/build/outputs/apk/release/app_pojavlauncher-release.apk "$APK"
+
+          (cd out && sha256sum "$(basename "$APK")" > "$(basename "$APK" .apk).sha256")
+
+          echo "::warning::Signed with the shared test key. Add the DIV_* secrets for a real release key."
+
+          ls -lh out
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DIVlauncher-${{ matrix.abi }}
+          path: out/DIVlauncher-${{ matrix.abi }}-*
+
+  # Windows 10 and 11 version (desktop/): setup .exe and a portable .exe, attached to the same release as the APKs
+  windows:
+    name: Build Windows app
+    needs: version
+    runs-on: windows-latest
+
+    env:
+      DIV_VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build files
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install the Tauri command line tool
+        run: npm install --global @tauri-apps/cli@2
+
+      - name: Test the core logic
+        working-directory: desktop
+        run: cargo test -p divcore
+
+      # Published builds use the number the version job worked out; other builds use divVersion.
+      - name: Set the version
+        shell: pwsh
+        run: |
+          $base = ((Get-Content gradle.properties | Where-Object { $_ -match '^divVersion=' }) -replace 'divVersion=', '').Trim()
+          $version = if ($env:DIV_VERSION) { $env:DIV_VERSION } else { $base }
+          $path = 'desktop/src-tauri/tauri.conf.json'
+          $text = Get-Content $path -Raw
+          $text = [regex]::new('"version"\s*:\s*"[^"]*"').Replace($text, ('"version": "' + $version + '"'), 1)
+          Set-Content -Path $path -Value $text -Encoding utf8
+          $cargo = 'desktop/src-tauri/Cargo.toml'
+          $text = Get-Content $cargo -Raw
+          $text = [regex]::new('(?m)^version\s*=\s*"[^"]*"').Replace($text, ('version = "' + $version + '"'), 1)
+          Set-Content -Path $cargo -Value $text -Encoding utf8
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Windows app version: $version"
+
+      - name: Build the app and the installer
+        working-directory: desktop/src-tauri
+        run: tauri build --bundles nsis
+
+      - name: Collect the files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          $setup = Get-ChildItem desktop/target/release/bundle/nsis -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'The installer was not built' }
+          Copy-Item $setup.FullName "out/DIVlauncher-$env:APP_VERSION-windows-x64-setup.exe"
+          Copy-Item desktop/target/release/divlauncher.exe "out/DIVlauncher-$env:APP_VERSION-windows-x64-portable.exe"
+          Get-ChildItem out -Filter '*.exe' | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Set-Content -Path ($_.FullName -replace '\.exe$', '.sha256') -Encoding ascii
+          }
+          Get-ChildItem out | Format-Table Name, Length
+
+      - name: Upload the Windows files
+        uses: actions/upload-artifact@v4
+        with:
+          name: DIVlauncher-windows-x64
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: [version, build, windows]
+
+    if: ${{ github.event_name == 'push' && (github.ref_type == 'tag' || github.ref_name == github.event.repository.default_branch) }}
+
+    runs-on: ubuntu-22.04
+
+    concurrency:
+      group: publish-release
+      cancel-in-progress: false
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.version.outputs.version }}
+      TAG: ${{ needs.version.outputs.tag }}
+
+    steps:
+      - name: Download all APKs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: DIVlauncher-*
+          merge-multiple: true
+          path: out
+
+      # Every push to the default branch is its own release (DIVlauncher-v1.0.1, v1.0.2, ...); old ones stay as history.
+      - name: Publish latest release (default branch)
+        if: ${{ github.ref_type == 'branch' }}
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          # remove the old rolling pre-release from earlier versions of this workflow, if it is still there
+          gh release delete nightly --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+
+          {
+            printf 'DIVlauncher v%s, built from commit %s.\n' "$VERSION" "${GITHUB_SHA::7}"
+            printf 'Android: most phones need the arm64-v8a APK. Windows 10 and 11: use the setup .exe (or the portable .exe).\n\n'
+            printf '%s\n' "$COMMIT_MESSAGE"
+          } > release-notes.md
+
+          gh release create "$TAG" out/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --latest \
+            --title "DIVlauncher v${VERSION}" \
+            --notes-file release-notes.md
+
+      - name: Publish tagged release
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          gh release create "$TAG" out/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --latest \
+            --title "DIVlauncher v${VERSION}" \
+            --generate-notes
+
+  # If a version was reserved but the release was not published, free the number again
+  cleanup-tag:
+    name: Free the version tag after a failure
+    needs: [version, release]
+    if: ${{ always() && needs.version.outputs.reserved == 'true' && needs.release.result != 'success' }}
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Delete the reserved tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" || true

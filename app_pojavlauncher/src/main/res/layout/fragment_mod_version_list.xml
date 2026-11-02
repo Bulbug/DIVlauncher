@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@color/background_app"
+    android:paddingHorizontal="@dimen/fragment_padding_medium">
+
+
+    <TextView
+        android:id="@+id/title_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginStart="4dp"
+        android:text="@string/forge_dl_select_version"
+        android:textColor="@color/primary_text"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <ExpandableListView
+        android:scrollbarThumbVertical="@color/minebutton_color"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:childDivider="@null"
+        android:id="@+id/mod_dl_expandable_version_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+    </ExpandableListView>
+
+    <LinearLayout
+        android:id="@+id/mod_dl_retry_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="@dimen/fragment_padding_medium"
+        android:paddingBottom="@dimen/fragment_padding_medium"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="@string/modloader_dl_failed_to_load_list"
+            android:textColor="@color/error"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/forge_installer_retry_button"
+            style="@style/OutlineButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/global_retry" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/mod_dl_list_progress"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true" />
+</LinearLayout>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Normal phones in landscape: width 640dp and up -->
+    <dimen name="shell_rail_width">76dp</dimen>
+    <dimen name="shell_profile_pill_width">176dp</dimen>
+    <dimen name="shell_account_pill_width">130dp</dimen>
+    <dimen name="shell_play_min_width">96dp</dimen>
+    <dimen name="shell_title_size">22sp</dimen>
+    <dimen name="settings_category_width">160dp</dimen>
+</resources>

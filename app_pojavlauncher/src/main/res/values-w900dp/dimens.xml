@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Large phones, foldables and tablets: width 900dp and up -->
+    <dimen name="shell_rail_width">88dp</dimen>
+    <dimen name="shell_profile_pill_width">220dp</dimen>
+    <dimen name="shell_account_pill_width">170dp</dimen>
+    <dimen name="shell_play_min_width">110dp</dimen>
+    <dimen name="shell_title_size">24sp</dimen>
+    <dimen name="settings_category_width">190dp</dimen>
+</resources>
