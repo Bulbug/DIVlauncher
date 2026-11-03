@@ -155,8 +155,13 @@ Fix reports and duplicate READMEs were removed from the project root. The guides
 - New `desktop/` folder: a Tauri app (Rust core `divcore` with tests, `src-tauri` app, `ui` window in the DIVlauncher design with bundled Manrope and Sora fonts). Offline accounts, profiles and Mojang's version list work; starting the game is the next step. See `DESKTOP.md`.
 - New workflow job `windows` builds the setup `.exe` and a portable `.exe` with the same version as the Android release; the release job now waits for it and attaches the files to the same release.
 
+## Step 25: Windows feature-parity increment
+- Added configurable maximum Java heap size, profile/account renaming, Modrinth search filtered by Minecraft version and loader, mod JAR downloads, and local mod file removal/listing to `desktop/`.
+- Mod-loader installation/launching and Microsoft sign-in remain incomplete; the Windows Mods screen explicitly explains this limitation.
+- Static validation: frontend syntax and Tauri JSON parse checks pass. Rust compilation and Windows runtime testing still need GitHub Actions/Windows validation.
+
 ## Not done yet (next steps)
-The in-game HUD/menus and the inner forms of the control-button settings dialog keep their old look. The Performance toggle is planned but not started.
+Windows feature parity is incremental, not complete: automatic Java runtime management, Microsoft authentication, mod-loader profile installation/launching, modpacks, live progress and process lifecycle controls remain to be ported. Android-specific touch controls and in-game overlay behavior do not map directly to a Windows desktop launcher.
 
 ## Validation
 Static only: XML parses, referenced drawables/colors/styles/dimens exist, brackets balance. No Gradle build and no on-device test were possible; open the editor on a phone, pull the menu out and open a button's settings.

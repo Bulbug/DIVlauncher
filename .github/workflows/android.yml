@@ -309,6 +309,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Check Windows launcher frontend syntax
+        run: node --check desktop/ui/app.js
+
       - name: Install the Tauri command line tool
         run: npm install --global @tauri-apps/cli@2
 

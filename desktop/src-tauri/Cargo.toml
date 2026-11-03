@@ -15,4 +15,5 @@ serde_json = "1"
 ureq = "2"
 sha1 = "0.10"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
+rfd = "0.15"
 divcore = { path = "../core" }

@@ -21,6 +21,10 @@ struct VersionList { latest_release: String, latest_snapshot: String, versions: 
 struct InstallResult { version: String, directory: String, files_downloaded: usize, assets_downloaded: usize }
 #[derive(Serialize)]
 struct LaunchResult { version: String, pid: u32, log_file: String, java: String }
+#[derive(Serialize)]
+struct ModSearchHit { project_id: String, slug: String, title: String, description: String, downloads: u64, icon_url: Option<String> }
+#[derive(Serialize)]
+struct ModInstallResult { title: String, filename: String, path: String, version: String }
 
 fn data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -217,7 +221,167 @@ async fn install_version(app: tauri::AppHandle, version: String) -> Result<Insta
 }
 
 
+fn url_encode(input: &str) -> String {
+    let mut out = String::new();
+    for b in input.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') { out.push(b as char); }
+        else { out.push_str(&format!("%{b:02X}")); }
+    }
+    out
+}
+fn validate_loader(loader: &str) -> Result<&'static str, String> {
+    match loader { "fabric" => Ok("fabric"), "forge" => Ok("forge"), "neoforge" => Ok("neoforge"), "quilt" => Ok("quilt"), _ => Err("Choose Fabric, Forge, NeoForge, or Quilt.".into()) }
+}
+#[tauri::command]
+async fn search_mods(query: String, game_version: String, loader: String) -> Result<Vec<ModSearchHit>, String> {
+    if !safe_id(&game_version) { return Err("Invalid Minecraft version identifier.".into()); }
+    let loader = validate_loader(&loader)?.to_string();
+    tauri::async_runtime::spawn_blocking(move || {
+        let facets = vec![vec!["project_type:mod".to_string()], vec![format!("versions:{game_version}")], vec![format!("categories:{loader}")]];
+        let facets_json = serde_json::to_string(&facets).map_err(|e| e.to_string())?;
+        let url = format!("https://api.modrinth.com/v2/search?query={}&facets={}&limit=24&index=relevance", url_encode(query.trim()), url_encode(&facets_json));
+        let text = ureq::get(&url).set("User-Agent", "DIVlauncher/1.0 (https://github.com/)" ).timeout(Duration::from_secs(25)).call()
+            .map_err(|e| format!("Modrinth search failed: {e}"))?.into_string().map_err(|e| e.to_string())?;
+        let value: Value = serde_json::from_str(&text).map_err(|e| format!("Invalid Modrinth response: {e}"))?;
+        let hits = value.get("hits").and_then(Value::as_array).ok_or("Modrinth returned no search results.")?;
+        Ok(hits.iter().filter_map(|hit| Some(ModSearchHit {
+            project_id: hit.get("project_id")?.as_str()?.to_owned(),
+            slug: hit.get("slug")?.as_str()?.to_owned(),
+            title: hit.get("title")?.as_str()?.to_owned(),
+            description: hit.get("description").and_then(Value::as_str).unwrap_or("").to_owned(),
+            downloads: hit.get("downloads").and_then(Value::as_u64).unwrap_or(0),
+            icon_url: hit.get("icon_url").and_then(Value::as_str).map(str::to_owned),
+        })).collect())
+    }).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn install_mod(app: tauri::AppHandle, project_id: String, game_version: String, loader: String) -> Result<ModInstallResult, String> {
+    if !safe_id(&project_id) || !safe_id(&game_version) { return Err("Invalid project or Minecraft version identifier.".into()); }
+    let loader = validate_loader(&loader)?.to_string();
+    tauri::async_runtime::spawn_blocking(move || {
+        let versions_url = format!("https://api.modrinth.com/v2/project/{}/version?game_versions={}&loaders={}", project_id,
+            url_encode(&serde_json::to_string(&vec![game_version.clone()]).map_err(|e| e.to_string())?),
+            url_encode(&serde_json::to_string(&vec![loader]).map_err(|e| e.to_string())?));
+        let text = ureq::get(&versions_url).set("User-Agent", "DIVlauncher/1.0 (https://github.com/)" ).timeout(Duration::from_secs(25)).call()
+            .map_err(|e| format!("Could not fetch compatible mod versions: {e}"))?.into_string().map_err(|e| e.to_string())?;
+        let versions: Value = serde_json::from_str(&text).map_err(|e| format!("Invalid Modrinth version response: {e}"))?;
+        let list = versions.as_array().ok_or("Modrinth returned an invalid version list.")?;
+        let chosen = list.first().ok_or("No compatible version was found for this Minecraft version and mod loader.")?;
+        let title = chosen.get("name").and_then(Value::as_str).or_else(|| chosen.get("version_number").and_then(Value::as_str)).unwrap_or("Mod").to_owned();
+        let files = chosen.get("files").and_then(Value::as_array).ok_or("This mod version has no downloadable files.")?;
+        let file = files.iter().find(|f| f.get("primary").and_then(Value::as_bool) == Some(true)).or_else(|| files.first()).ok_or("This mod version has no downloadable files.")?;
+        let filename = file.get("filename").and_then(Value::as_str).ok_or("Mod file has no filename.")?.to_owned();
+        if filename.contains('/') || filename.contains('\\') || !filename.to_ascii_lowercase().ends_with(".jar") { return Err("Refusing an unsafe or non-JAR mod file.".into()); }
+        let url = string_field(file, "url")?;
+        let hash = file.pointer("/hashes/sha1").and_then(Value::as_str);
+        let game = game_dir(&app)?;
+        let target = game.join("mods").join(&filename);
+        download_file(url, &target, hash)?;
+        Ok(ModInstallResult { title, filename, path: target.display().to_string(), version: game_version })
+    }).await.map_err(|e| e.to_string())?
+}
+
+#[derive(Serialize)]
+struct InstalledMod { filename: String, size_bytes: u64 }
+#[tauri::command]
+async fn list_installed_mods(app: tauri::AppHandle) -> Result<Vec<InstalledMod>, String> {
+    let game = game_dir(&app)?;
+    let mods = game.join("mods");
+    if !mods.exists() { return Ok(Vec::new()); }
+    let mut result = Vec::new();
+    for entry in fs::read_dir(mods).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.is_file() && path.extension().and_then(|x| x.to_str()).is_some_and(|x| x.eq_ignore_ascii_case("jar")) {
+            result.push(InstalledMod { filename: entry.file_name().to_string_lossy().into_owned(), size_bytes: entry.metadata().map(|m| m.len()).unwrap_or(0) });
+        }
+    }
+    result.sort_by(|a, b| a.filename.to_lowercase().cmp(&b.filename.to_lowercase()));
+    Ok(result)
+}
+#[tauri::command]
+async fn remove_mod(app: tauri::AppHandle, filename: String) -> Result<(), String> {
+    if filename.is_empty() || filename.contains('/') || filename.contains('\\') || !filename.to_ascii_lowercase().ends_with(".jar") { return Err("Invalid mod filename.".into()); }
+    let path = game_dir(&app)?.join("mods").join(filename);
+    if !path.is_file() { return Err("That mod file is no longer present.".into()); }
+    fs::remove_file(path).map_err(|e| e.to_string())
+}
+
+#[derive(Serialize)]
+struct JavaInfo { available: bool, path: Option<String>, major: Option<u32>, message: String }
+
+#[tauri::command]
+async fn java_diagnostics(app: tauri::AppHandle) -> JavaInfo {
+    let managed = [21, 17, 8].iter().filter_map(|m| managed_java_path(&app, *m).ok()).find(|p| p.is_file());
+    match managed.map(Ok).unwrap_or_else(find_java) {
+        Ok(path) => match java_major(&path) {
+            Ok(major) => JavaInfo {
+                available: true,
+                path: Some(path.display().to_string()),
+                major: Some(major),
+                message: if major >= 21 { format!("Java {major} detected. Suitable for current Minecraft releases that require Java 21.") }
+                    else if major >= 17 { format!("Java {major} detected. Suitable for many older versions, but newer Minecraft releases may require Java 21.") }
+                    else { format!("Java {major} detected. This is too old for many modern Minecraft versions; install Java 17 or 21 as required by your selected version.") },
+            },
+            Err(error) => JavaInfo { available: false, path: Some(path.display().to_string()), major: None, message: format!("Java was found but its version could not be read: {error}") },
+        },
+        Err(error) => JavaInfo { available: false, path: None, major: None, message: format!("{error}. Install a Java runtime matching your Minecraft version, then restart DIVlauncher.") },
+    }
+}
+
+#[derive(Serialize)]
+struct JavaInstallResult { major: u32, java: String, runtime_dir: String }
+
+fn managed_java_path(app: &tauri::AppHandle, major: u32) -> Result<PathBuf, String> {
+    let root = data_dir(app)?.join("runtimes").join(format!("temurin-{major}"));
+    Ok(root.join("bin").join("java.exe"))
+}
+
+#[tauri::command]
+async fn install_java_runtime(app: tauri::AppHandle, major: u32) -> Result<JavaInstallResult, String> {
+    if !matches!(major, 8 | 17 | 21) { return Err("Choose a supported Java LTS runtime: 8, 17, or 21.".into()); }
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = data_dir(&app)?.join("runtimes").join(format!("temurin-{major}"));
+        let java = root.join("bin").join("java.exe");
+        if java.is_file() { return Ok(JavaInstallResult { major, java: java.display().to_string(), runtime_dir: root.display().to_string() }); }
+        fs::create_dir_all(root.parent().ok_or("Invalid runtime directory")?).map_err(|e| e.to_string())?;
+        let url = format!("https://api.adoptium.net/v3/assets/latest/{major}/hotspot?architecture=x64&image_type=jre&os=windows&vendor=eclipse");
+        let body = ureq::get(&url).timeout(Duration::from_secs(45)).call().map_err(|e| format!("Could not query Eclipse Adoptium: {e}"))?.into_string().map_err(|e| e.to_string())?;
+        let assets: Value = serde_json::from_str(&body).map_err(|e| format!("Invalid runtime catalog response: {e}"))?;
+        let download_url = assets.get(0).and_then(|v| v.pointer("/binary/package/link")).and_then(Value::as_str).ok_or("No compatible Windows x64 Java runtime was published.")?;
+        if !download_url.starts_with("https://") || !download_url.contains("github.com/adoptium/") { return Err("Runtime provider returned an unexpected download host.".into()); }
+        let response = ureq::get(download_url).timeout(Duration::from_secs(180)).call().map_err(|e| format!("Runtime download failed: {e}"))?;
+        let mut bytes = Vec::new(); response.into_reader().take(512 * 1024 * 1024).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+        if bytes.is_empty() { return Err("Downloaded Java runtime archive is empty.".into()); }
+        let archive_path = root.with_extension("zip"); fs::write(&archive_path, &bytes).map_err(|e| e.to_string())?;
+        let file = File::open(&archive_path).map_err(|e| e.to_string())?;
+        let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("Invalid Java runtime archive: {e}"))?;
+        let staging = root.with_extension("staging"); if staging.exists() { fs::remove_dir_all(&staging).map_err(|e| e.to_string())?; }
+        fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
+        for i in 0..archive.len() {
+            let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
+            let name = entry.name().replace('\\', "/");
+            let parts: Vec<&str> = name.split('/').filter(|x| !x.is_empty()).collect();
+            if parts.len() < 2 { continue; }
+            let rel = parts[1..].join("/"); if rel.is_empty() { continue; }
+            let rel_path = safe_relative_path(&rel)?; let target = staging.join(rel_path);
+            if entry.is_dir() { fs::create_dir_all(&target).map_err(|e| e.to_string())?; continue; }
+            if let Some(parent) = target.parent() { fs::create_dir_all(parent).map_err(|e| e.to_string())?; }
+            let mut out = File::create(&target).map_err(|e| e.to_string())?;
+            std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
+        }
+        let staged_java = staging.join("bin/java.exe");
+        if !staged_java.is_file() { let _ = fs::remove_dir_all(&staging); let _ = fs::remove_file(&archive_path); return Err("Runtime archive did not contain bin/java.exe.".into()); }
+        if root.exists() { fs::remove_dir_all(&root).map_err(|e| e.to_string())?; }
+        fs::rename(&staging, &root).map_err(|e| e.to_string())?;
+        let _ = fs::remove_file(&archive_path);
+        Ok(JavaInstallResult { major, java: java.display().to_string(), runtime_dir: root.display().to_string() })
+    }).await.map_err(|e| e.to_string())?
+}
+
 fn find_java() -> Result<PathBuf, String> {
+    // Prefer launcher-managed runtimes; newest compatible LTS is checked first.
+    // Managed runtimes are discovered from the standard app data location by the command below.
     if let Some(home) = std::env::var_os("JAVA_HOME") {
         let mut candidate = PathBuf::from(home).join("bin");
         candidate.push(if cfg!(windows) { "java.exe" } else { "java" });
@@ -302,7 +466,7 @@ async fn is_version_installed(app: tauri::AppHandle, version: String) -> Result<
 
 /// Launches an already-installed vanilla version with an existing local Java runtime and an offline profile.
 #[tauri::command]
-async fn launch_version(app: tauri::AppHandle, version: String, username: String) -> Result<LaunchResult, String> {
+async fn launch_version(app: tauri::AppHandle, version: String, username: String, memory_mb: Option<u32>, extra_jvm_args: Option<Vec<String>>) -> Result<LaunchResult, String> {
     if !safe_id(&version) { return Err("Invalid Minecraft version identifier.".into()); }
     if !divcore::is_valid_username(&username) { return Err("Choose a valid offline username (3–16 letters, numbers or underscores) before launching.".into()); }
     tauri::async_runtime::spawn_blocking(move || {
@@ -318,11 +482,12 @@ async fn launch_version(app: tauri::AppHandle, version: String, username: String
         if meta.get("inheritsFrom").is_some() {
             return Err("This launcher update currently supports vanilla versions only; inherited mod-loader profiles are not supported yet.".into());
         }
-        let java = find_java()?;
-        let java_ver = java_major(&java)?;
         let required = meta.pointer("/javaVersion/majorVersion").and_then(Value::as_u64).unwrap_or(8) as u32;
+        let managed = [21, 17, 8].iter().filter(|m| **m >= required).filter_map(|m| managed_java_path(&app, *m).ok()).find(|p| p.is_file());
+        let java = managed.map(Ok).unwrap_or_else(find_java)?;
+        let java_ver = java_major(&java)?;
         if java_ver < required {
-            return Err(format!("Minecraft {version} requires Java {required} or newer, but the Java on PATH is version {java_ver}. Install the required Java runtime and update JAVA_HOME/PATH."));
+            return Err(format!("Minecraft {version} requires Java {required} or newer, but the Java on PATH is version {java_ver}. Install Java {required} or newer from Settings → Java runtime."));
         }
         let native_dir = extract_natives(&meta, &game, &version)?;
         let assets_dir = game.join("assets");
@@ -379,6 +544,27 @@ async fn launch_version(app: tauri::AppHandle, version: String, username: String
         } else {
             jvm_args.push(format!("-Djava.library.path={}", native_dir.display()));
         }
+        // Let the user-selected memory limit override Mojang's default heap argument.
+        let memory = memory_mb.unwrap_or(4096).clamp(1024, 32768);
+        jvm_args.retain(|arg| !arg.starts_with("-Xmx"));
+        jvm_args.push(format!("-Xmx{}M", memory));
+        // Custom JVM options are passed as individual process arguments (never through a shell).
+        // Block heap/classpath/agent overrides that can break launcher-managed arguments.
+        if let Some(custom) = extra_jvm_args {
+            if custom.len() > 20 { return Err("At most 20 custom JVM arguments are allowed.".into()); }
+            for arg in custom {
+                let arg = arg.trim();
+                if arg.is_empty() { continue; }
+                if arg.len() > 512 || arg.chars().any(|c| c.is_control()) {
+                    return Err("A custom JVM argument is too long or contains control characters.".into());
+                }
+                if arg.starts_with("-Xmx") || arg == "-cp" || arg == "-classpath" || arg == "--class-path"
+                    || arg.starts_with("-javaagent") || arg.starts_with("-agentlib") || arg.starts_with("-agentpath") {
+                    return Err(format!("The custom JVM argument '{arg}' is reserved or unsafe for launcher-managed startup."));
+                }
+                jvm_args.push(arg.to_owned());
+            }
+        }
         if !jvm_args.iter().any(|x| x == "-cp" || x == "-classpath" || x == "--class-path") {
             jvm_args.push("-cp".into());
             jvm_args.push(values.get("classpath").cloned().unwrap_or_default());
@@ -415,7 +601,214 @@ async fn launch_version(app: tauri::AppHandle, version: String, username: String
     }).await.map_err(|e| e.to_string())?
 }
 
+
+#[derive(Serialize)]
+struct GameFileEntry { name: String, kind: String, size_bytes: u64 }
+fn game_category_dir(app: &tauri::AppHandle, category: &str) -> Result<PathBuf, String> {
+    let base = game_dir(app)?;
+    let dir = match category {
+        "worlds" => base.join("saves"),
+        "screenshots" => base.join("screenshots"),
+        "resourcepacks" => base.join("resourcepacks"),
+        "shaderpacks" => base.join("shaderpacks"),
+        "logs" => base.join("logs"),
+        _ => return Err("Unknown Minecraft folder category.".into()),
+    };
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir)
+}
+#[tauri::command]
+fn list_game_files(app: tauri::AppHandle, category: String) -> Result<Vec<GameFileEntry>, String> {
+    let dir = game_category_dir(&app, &category)?;
+    let mut entries = Vec::new();
+    for item in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+        let item = item.map_err(|e| e.to_string())?;
+        let path = item.path();
+        let meta = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
+        if meta.file_type().is_symlink() { continue; }
+        let name = item.file_name().to_string_lossy().into_owned();
+        if name.starts_with('.') { continue; }
+        entries.push(GameFileEntry { name, kind: if meta.is_dir() { "folder".into() } else { "file".into() }, size_bytes: if meta.is_file() { meta.len() } else { 0 } });
+    }
+    entries.sort_by_key(|x| (x.kind != "folder", x.name.to_lowercase()));
+    Ok(entries)
+}
+#[tauri::command]
+fn delete_game_file(app: tauri::AppHandle, category: String, name: String) -> Result<(), String> {
+    if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\\') { return Err("Invalid file name.".into()); }
+    let dir = game_category_dir(&app, &category)?;
+    let target = dir.join(&name);
+    let meta = fs::symlink_metadata(&target).map_err(|e| e.to_string())?;
+    if meta.file_type().is_symlink() { return Err("Refusing to delete a symbolic link.".into()); }
+    if meta.is_dir() { fs::remove_dir_all(target).map_err(|e| e.to_string()) } else { fs::remove_file(target).map_err(|e| e.to_string()) }
+}
+#[tauri::command]
+fn open_game_folder(app: tauri::AppHandle, category: String) -> Result<(), String> {
+    let dir = game_category_dir(&app, &category)?;
+    #[cfg(target_os = "windows")]
+    { Command::new("explorer.exe").arg(&dir).spawn().map_err(|e| e.to_string())?; }
+    #[cfg(target_os = "macos")]
+    { Command::new("open").arg(&dir).spawn().map_err(|e| e.to_string())?; }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    { Command::new("xdg-open").arg(&dir).spawn().map_err(|e| e.to_string())?; }
+    Ok(())
+}
+
+
+#[derive(Serialize)]
+struct ArchiveResult { path: String, files: usize }
+
+fn archive_category_dir(app: &tauri::AppHandle, category: &str) -> Result<PathBuf, String> {
+    match category {
+        "mods" => Ok(game_dir(app)?.join("mods")),
+        "resourcepacks" | "shaderpacks" | "worlds" => game_category_dir(app, category),
+        _ => Err("Unsupported archive category.".into()),
+    }
+}
+
+fn append_directory<W: Write + std::io::Seek>(archive: &mut zip::ZipWriter<W>, root: &Path, prefix: &str) -> Result<usize, String> {
+    use zip::write::FileOptions;
+    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let mut count = 0usize;
+    fn add_dir<W: Write + std::io::Seek>(z: &mut zip::ZipWriter<W>, root: &Path, dir: &Path, prefix: &str, options: zip::write::FileOptions, count: &mut usize) -> Result<(), String> {
+        for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            let meta = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
+            if meta.file_type().is_symlink() { continue; }
+            let rel = path.strip_prefix(root).map_err(|e| e.to_string())?;
+            let name = format!("{}/{}", prefix, rel.to_string_lossy().replace('\\', "/"));
+            if meta.is_dir() { add_dir(z, root, &path, prefix, options, count)?; }
+            else if meta.is_file() {
+                if meta.len() > 512 * 1024 * 1024 { return Err(format!("Skipping oversized file: {}", path.display())); }
+                z.start_file(name, options).map_err(|e| e.to_string())?;
+                let mut f = File::open(&path).map_err(|e| e.to_string())?;
+                std::io::copy(&mut f, z).map_err(|e| e.to_string())?;
+                *count += 1;
+            }
+        }
+        Ok(())
+    }
+    add_dir(archive, root, root, prefix, options, &mut count)?;
+    Ok(count)
+}
+
+fn extract_zip_safely<R: Read + std::io::Seek>(reader: R, target: &Path, allowed_roots: &[&str]) -> Result<usize, String> {
+    let mut archive = zip::ZipArchive::new(reader).map_err(|e| format!("Invalid ZIP archive: {e}"))?;
+    if archive.len() > 30000 { return Err("Archive contains too many entries.".into()); }
+    let mut total = 0u64;
+    let mut files = 0usize;
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
+        let name = entry.name().replace('\\', "/");
+        let path = Path::new(&name);
+        if path.is_absolute() || path.components().any(|c| !matches!(c, Component::Normal(_))) { return Err("Archive contains an unsafe path.".into()); }
+        let first = path.components().next().and_then(|c| match c { Component::Normal(x) => x.to_str(), _ => None }).ok_or("Archive entry has no root folder.")?;
+        if !allowed_roots.is_empty() && !allowed_roots.iter().any(|r| *r == first) { continue; }
+        if entry.unix_mode().is_some_and(|m| (m & 0o170000) == 0o120000) { return Err("Archive contains a symbolic link.".into()); }
+        total = total.saturating_add(entry.size());
+        if total > 2 * 1024 * 1024 * 1024 { return Err("Archive expands beyond the 2 GB safety limit.".into()); }
+        let out = target.join(path);
+        if entry.is_dir() { fs::create_dir_all(&out).map_err(|e| e.to_string())?; continue; }
+        if let Some(parent) = out.parent() { fs::create_dir_all(parent).map_err(|e| e.to_string())?; }
+        let mut file = File::create(&out).map_err(|e| e.to_string())?;
+        std::io::copy(&mut entry, &mut file).map_err(|e| e.to_string())?;
+        files += 1;
+    }
+    Ok(files)
+}
+
+#[tauri::command]
+fn export_modpack(app: tauri::AppHandle) -> Result<ArchiveResult, String> {
+    let selected = rfd::FileDialog::new().add_filter("Modpack ZIP", &["zip"]).set_file_name("divlauncher-modpack.zip").save_file().ok_or("Export cancelled.")?;
+    let game = game_dir(&app)?;
+    let file = File::create(&selected).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipWriter::new(file);
+    use zip::write::FileOptions;
+    let opts = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let mut count = 0usize;
+    for folder in ["mods", "config", "resourcepacks", "shaderpacks"] {
+        let root = game.join(folder);
+        if root.exists() { count += append_directory(&mut zip, &root, folder)?; }
+    }
+    let manifest = serde_json::json!({"format":"divlauncher-modpack","version":1,"minecraft":"","loader":"unknown","note":"Files exported from DIVlauncher. Set the Minecraft version and loader in a compatible launcher."});
+    zip.start_file("divlauncher-manifest.json", opts).map_err(|e| e.to_string())?;
+    zip.write_all(manifest.to_string().as_bytes()).map_err(|e| e.to_string())?;
+    zip.finish().map_err(|e| e.to_string())?;
+    Ok(ArchiveResult { path: selected.display().to_string(), files: count })
+}
+
+#[tauri::command]
+fn import_modpack(app: tauri::AppHandle) -> Result<ArchiveResult, String> {
+    let selected = rfd::FileDialog::new().add_filter("Modpack ZIP", &["zip"]).pick_file().ok_or("Import cancelled.")?;
+    let game = game_dir(&app)?;
+    let staging = game.join(".divlauncher-modpack-staging");
+    if staging.exists() { fs::remove_dir_all(&staging).map_err(|e| e.to_string())?; }
+    fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
+    let file = File::open(&selected).map_err(|e| e.to_string())?;
+    let count = match extract_zip_safely(file, &staging, &["mods", "config", "resourcepacks", "shaderpacks"]) {
+        Ok(n) => n, Err(e) => { let _ = fs::remove_dir_all(&staging); return Err(e); }
+    };
+    for folder in ["mods", "config", "resourcepacks", "shaderpacks"] {
+        let src = staging.join(folder); if !src.exists() { continue; }
+        let dst = game.join(folder); fs::create_dir_all(&dst).map_err(|e| e.to_string())?;
+        copy_tree_no_links(&src, &dst)?;
+    }
+    let _ = fs::remove_dir_all(&staging);
+    Ok(ArchiveResult { path: selected.display().to_string(), files: count })
+}
+
+fn copy_tree_no_links(src: &Path, dst: &Path) -> Result<(), String> {
+    for entry in fs::read_dir(src).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?; let from = entry.path(); let meta = fs::symlink_metadata(&from).map_err(|e| e.to_string())?;
+        if meta.file_type().is_symlink() { continue; }
+        let to = dst.join(entry.file_name());
+        if meta.is_dir() { fs::create_dir_all(&to).map_err(|e| e.to_string())?; copy_tree_no_links(&from, &to)?; }
+        else if meta.is_file() { fs::copy(&from, &to).map_err(|e| e.to_string())?; }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn export_world(app: tauri::AppHandle, name: String) -> Result<ArchiveResult, String> {
+    if name.is_empty() || name.contains('/') || name.contains('\\') || name == "." || name == ".." { return Err("Invalid world name.".into()); }
+    let root = game_category_dir(&app, "worlds")?.join(&name);
+    if !root.is_dir() { return Err("World folder was not found.".into()); }
+    let selected = rfd::FileDialog::new().add_filter("World ZIP", &["zip"]).set_file_name(&format!("{name}.zip")).save_file().ok_or("Export cancelled.")?;
+    let file = File::create(&selected).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipWriter::new(file);
+    let count = append_directory(&mut zip, &root, &name)?;
+    zip.finish().map_err(|e| e.to_string())?;
+    Ok(ArchiveResult { path: selected.display().to_string(), files: count })
+}
+
+#[tauri::command]
+fn import_world(app: tauri::AppHandle) -> Result<ArchiveResult, String> {
+    let selected = rfd::FileDialog::new().add_filter("World ZIP", &["zip"]).pick_file().ok_or("Import cancelled.")?;
+    let stem = selected.file_stem().and_then(|s| s.to_str()).unwrap_or("Imported World");
+    let safe_name: String = stem.chars().map(|c| if c.is_ascii_alphanumeric() || c == ' ' || c == '_' || c == '-' { c } else { '_' }).collect();
+    let name = safe_name.trim().to_string(); if name.is_empty() { return Err("Could not determine a world folder name.".into()); }
+    let saves = game_category_dir(&app, "worlds")?; let dest = saves.join(&name);
+    if dest.exists() { return Err(format!("A world named '{name}' already exists. Rename or move it before importing.")); }
+    let staging = saves.join(format!(".divlauncher-import-{}", std::process::id()));
+    if staging.exists() { fs::remove_dir_all(&staging).map_err(|e| e.to_string())?; }
+    fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
+    let file = File::open(&selected).map_err(|e| e.to_string())?;
+    let count = match extract_zip_safely(file, &staging, &[]) {
+        Ok(n) => n, Err(e) => { let _ = fs::remove_dir_all(&staging); return Err(e); }
+    };
+    // Accept either a named top-level folder or a direct world-folder archive,
+    // but require Minecraft's level.dat before moving anything into saves/.
+    let nested = staging.join(&name);
+    let source = if nested.join("level.dat").is_file() { nested } else { staging.clone() };
+    if !source.join("level.dat").is_file() { let _ = fs::remove_dir_all(&staging); return Err("This ZIP does not appear to contain a Minecraft world (level.dat is missing).".into()); }
+    fs::rename(&source, &dest).map_err(|e| e.to_string())?;
+    let _ = fs::remove_dir_all(&staging);
+    Ok(ArchiveResult { path: dest.display().to_string(), files: count })
+}
+
+
 fn main() {
-    tauri::Builder::default().invoke_handler(tauri::generate_handler![app_info, list_versions, offline_uuid, load_state, save_state, install_version, is_version_installed, launch_version])
+    tauri::Builder::default().invoke_handler(tauri::generate_handler![app_info, list_versions, offline_uuid, load_state, save_state, install_version, is_version_installed, launch_version, search_mods, install_mod, list_installed_mods, remove_mod, java_diagnostics, install_java_runtime, list_game_files, delete_game_file, open_game_folder, export_modpack, import_modpack, export_world, import_world])
         .run(tauri::generate_context!()).expect("error while running DIVlauncher");
 }

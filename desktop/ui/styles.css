@@ -74,3 +74,4 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--line);padding:12px 20px;border-radius:14px;z-index:60;max-width:80vw;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
 @media (max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.pill{min-width:150px}}
+.mod-search{display:flex;gap:12px;align-items:flex-end}.mod-search .field input,.mod-search .field select{height:42px}.mod-search .btn{flex:none;margin-bottom:0}.card img{flex:none}@media(max-width:1000px){.mod-search{flex-wrap:wrap}.mod-search .field{min-width:180px}}

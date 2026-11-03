@@ -55,14 +55,7 @@ Which APK do I download? Almost every modern phone needs **arm64-v8a**. Older 32
 
 ## Documentation
 
-Guides are in the [`docs`](docs) folder:
-- [Windows app (desktop/)](docs/DESKTOP.md)
-- [Versioning and releases](docs/VERSIONING.md)
-- [Change log](docs/CHANGELOG.md): what changed in the redesign and the features after it
-- [Account authentication](docs/ACCOUNT_AUTHENTICATION.md) and [Ely.by browser sign-in setup](docs/ELYBY_BROWSER_OAUTH_SETUP.md)
-- [Mod downloader](docs/MOD_DOWNLOADER.md)
-- [Performance toggle](docs/PERFORMANCE_TOGGLE.md) and [performance baseline test](docs/PERFORMANCE_BASELINE.md)
-- [Removing account data](docs/dataremoval.md)
+The engineering documentation hub is [`docs/README.md`](docs/README.md). It links the requirements, design, architecture, persistence, Tauri API, contributor/agent guidance, implementation plan, setup, security, integrations, QA and debugging documents.
 
 ## License
 
