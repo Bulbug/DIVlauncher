@@ -78,3 +78,4 @@ The components below are used under their own licenses.
 * [virglrenderer](https://github.com/PojavLauncherTeam/virglrenderer): [MIT License](https://gitlab.freedesktop.org/virgl/virglrenderer/-/blob/master/COPYING).
 * Thanks to [MCHeads](https://mc-heads.net) for providing Minecraft avatars.
 
+\n\n## Build troubleshooting\n\n- [Android NDK troubleshooting](docs/ANDROID_NDK_TROUBLESHOOTING.md)\n

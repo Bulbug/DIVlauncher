@@ -214,16 +214,55 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android NDK and SDK pieces
+      - name: Set up Android SDK command-line tools
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
         run: |
+          set -euo pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" --licenses || true
+
+      - name: Install Android NDK and SDK packages (with recovery)
+        env:
+          ANDROID_NDK_VERSION: "25.2.9519653"
+        run: |
+          set -euo pipefail
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          NDK_DIR="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
 
-          echo y | "$SDKMANAGER" --install \
-            "ndk;25.2.9519653" \
-            "build-tools;34.0.0" \
-            "platforms;android-34" > /dev/null
+          # A failed sdkmanager download can leave a partial archive in its cache.
+          # Remove only the affected NDK install/cache, then retry the package install.
+          install_packages() {
+            "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install \
+              "ndk;$ANDROID_NDK_VERSION" \
+              "build-tools;34.0.0" \
+              "platforms;android-34"
+          }
 
-          ls "$ANDROID_HOME/ndk"
+          for attempt in 1 2 3; do
+            echo "Android SDK installation attempt $attempt/3"
+            if install_packages; then
+              break
+            fi
+
+            echo "::warning::Android SDK package installation failed; clearing partial NDK data before retry."
+            rm -rf "$NDK_DIR"
+            rm -rf "$HOME/.android/cache"
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Could not install Android NDK $ANDROID_NDK_VERSION after 3 attempts."
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
+
+          # Do not proceed with a partial or wrong NDK installation.
+          test -f "$NDK_DIR/source.properties"
+          grep -q "Pkg.Revision = 25.2.9519653" "$NDK_DIR/source.properties"
+          test -d "$NDK_DIR/toolchains/llvm/prebuilt"
+          echo "ANDROID_NDK_HOME=$NDK_DIR" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$NDK_DIR" >> "$GITHUB_ENV"
+          cat "$NDK_DIR/source.properties"
+          ls -la "$NDK_DIR/toolchains/llvm/prebuilt"
 
       - name: Check for release signing key
         id: signing
